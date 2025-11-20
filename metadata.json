@@ -1,0 +1,7 @@
+{
+  "name": "Chytrá Kniha Jízd",
+  "description": "Moderní aplikace pro správu knihy jízd s využitím AI pro automatické parsování cest z textu.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
