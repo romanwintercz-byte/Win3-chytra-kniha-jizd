@@ -21,9 +21,49 @@
       }
 
       @media print {
-        /* Basic cleanup for Ctrl+P printing, though the dedicated button is preferred */
-        nav, button, .no-print {
+        /* Reset padding and margins for print */
+        @page {
+          margin: 1cm;
+          size: auto; 
+        }
+        body {
+          background: white !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+
+        /* Hide the root app and all non-print elements */
+        #root, nav, button, .no-print, .hidden-print {
           display: none !important;
+        }
+
+        /* Only show the dedicated print preview container */
+        #print-preview-container {
+          display: block !important;
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: auto !important;
+          z-index: 9999 !important;
+          overflow: visible !important;
+          background: white !important;
+        }
+        
+        #print-preview-container * {
+          visibility: visible !important;
+          box-shadow: none !important; /* Remove shadows for print */
+        }
+        
+        /* Ensure report looks good on paper */
+        #printable-report {
+          box-shadow: none !important;
+          border: none !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          max-width: 100% !important;
         }
       }
     </style>
@@ -39,10 +79,8 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
   <body>
     <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
-</body>
+  </body>
 </html>

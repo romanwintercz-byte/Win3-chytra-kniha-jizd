@@ -312,7 +312,7 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
                 <label className="block text-sm font-medium text-gray-700 mb-2">Popište svou jízdu</label>
                 <div className="relative h-64 md:h-auto">
                   <textarea
-                    className="w-full h-full md:h-40 border border-gray-200 rounded-xl p-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-gray-700 text-base"
+                    className="w-full h-full md:h-40 border border-gray-200 rounded-xl p-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-gray-900 text-base"
                     placeholder="Např: Včera cesta Brno Praha, 205km, služebně..."
                     value={aiInput}
                     onChange={(e) => setAiInput(e.target.value)}
@@ -349,7 +349,7 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
                   <input 
                     type="date" 
                     required
-                    className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-base font-medium"
+                    className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-base font-medium text-gray-900"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                   />
@@ -361,7 +361,7 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
                   </label>
                   <div className="relative">
                       <select 
-                        className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-base font-medium appearance-none"
+                        className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-base font-medium appearance-none text-gray-900"
                         value={type}
                         onChange={(e) => setType(e.target.value as TripType)}
                       >
@@ -379,7 +379,7 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-800 mb-1.5">Řidič</label>
-                  <select required className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-base font-medium" value={driverId} onChange={(e) => setDriverId(e.target.value)}>
+                  <select required className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-base font-medium text-gray-900" value={driverId} onChange={(e) => setDriverId(e.target.value)}>
                       <option value="" disabled>-- Vyberte --</option>
                       {renderSelectOptions(drivers, driverId, d => d.name)}
                   </select>
@@ -387,14 +387,14 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-xs font-bold text-gray-800 mb-1.5">Vozidlo</label>
-                        <select required className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-base font-medium" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}>
+                        <select required className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-base font-medium text-gray-900" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}>
                             <option value="" disabled>-- Vyberte --</option>
                             {renderSelectOptions(vehicles, vehicleId, v => v.name)}
                         </select>
                     </div>
                     <div>
                         <label className="block text-xs font-bold text-gray-800 mb-1.5">Zakázka</label>
-                        <select required className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-base font-medium" value={orderId} onChange={(e) => setOrderId(e.target.value)}>
+                        <select required className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-base font-medium text-gray-900" value={orderId} onChange={(e) => setOrderId(e.target.value)}>
                             <option value="" disabled>-- Vyberte --</option>
                             {renderSelectOptions(orders, orderId, o => o.name)}
                         </select>
@@ -409,12 +409,12 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
                     <div className="relative pl-8">
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-gray-400 ring-4 ring-gray-100"></div>
                         <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Odkud</label>
-                        <input type="text" required placeholder="Město / Ulice" className="w-full px-0 bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none py-2 text-base font-medium placeholder:font-normal" value={origin} onChange={(e) => setOrigin(e.target.value)} />
+                        <input type="text" required placeholder="Město / Ulice" className="w-full px-0 bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none py-2 text-base font-medium placeholder:font-normal text-gray-900 placeholder:text-gray-400" value={origin} onChange={(e) => setOrigin(e.target.value)} />
                     </div>
                     <div className="relative pl-8">
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-blue-500 ring-4 ring-blue-100"></div>
                         <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Kam</label>
-                        <input type="text" required placeholder="Cíl cesty" className="w-full px-0 bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none py-2 text-base font-medium placeholder:font-normal" value={destination} onChange={(e) => setDestination(e.target.value)} />
+                        <input type="text" required placeholder="Cíl cesty" className="w-full px-0 bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none py-2 text-base font-medium placeholder:font-normal text-gray-900 placeholder:text-gray-400" value={destination} onChange={(e) => setDestination(e.target.value)} />
                     </div>
                  </div>
               </div>
@@ -433,11 +433,11 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <span className="block text-[10px] text-gray-500 mb-1 uppercase tracking-wide">Start</span>
-                    <input type="number" required min="0" className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-base font-mono font-medium" value={startOdometer} onChange={(e) => setStartOdometer(Number(e.target.value))} />
+                    <input type="number" required min="0" className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-base font-mono font-medium text-gray-900" value={startOdometer} onChange={(e) => setStartOdometer(Number(e.target.value))} />
                   </div>
                   <div>
                     <span className="block text-[10px] text-gray-500 mb-1 uppercase tracking-wide">Cíl</span>
-                    <input type="number" required min={startOdometer} className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-base font-mono font-medium" value={endOdometer} onChange={(e) => setEndOdometer(Number(e.target.value))} />
+                    <input type="number" required min={startOdometer} className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-base font-mono font-medium text-gray-900" value={endOdometer} onChange={(e) => setEndOdometer(Number(e.target.value))} />
                   </div>
                 </div>
               </div>
@@ -449,7 +449,7 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
                    Tankování
                  </label>
                  <div className="relative">
-                   <input type="number" min="0" step="0.1" placeholder="Litry (nepovinné)" className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-base" value={fuelLiters} onChange={(e) => setFuelLiters(e.target.value)} />
+                   <input type="number" min="0" step="0.1" placeholder="Litry (nepovinné)" className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-base text-gray-900" value={fuelLiters} onChange={(e) => setFuelLiters(e.target.value)} />
                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">L</span>
                  </div>
               </div>

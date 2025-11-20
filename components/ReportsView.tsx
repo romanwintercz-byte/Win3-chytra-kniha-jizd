@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { FileText, Download, Printer, User, Briefcase, Fuel, Calendar, Car, ArrowRightLeft } from 'lucide-react';
+import { FileText, Download, Printer, User, Briefcase, Fuel, Calendar, Car, ArrowLeft, X } from 'lucide-react';
 import { Trip, TripType, Vehicle, Driver, Order } from '../types';
 
 interface ReportsViewProps {
@@ -19,6 +19,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ trips, vehicles, drive
   
   const [selectedDriverId, setSelectedDriverId] = useState<string>('');
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
+  
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
 
   // Initialize selections
   useEffect(() => {
@@ -103,48 +105,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ trips, vehicles, drive
     };
   }, [trips, selectedMonth, selectedDriverId, selectedVehicleId, reportType, drivers, vehicles, orders]);
 
-
-  // --- Export Handlers ---
-  const handlePrint = () => {
-    const printContent = document.getElementById('printable-report');
-    if (!printContent) return;
-
-    const printWindow = window.open('', '_blank', 'width=900,height=800');
-    if (!printWindow) {
-      alert('Pro tisk prosím povolte vyskakovací okna v prohlížeči.');
-      return;
-    }
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html lang="cs">
-        <head>
-          <meta charset="UTF-8">
-          <title>Tisk Reportu - Kniha Jízd</title>
-          <script src="https://cdn.tailwindcss.com"></script>
-          <style>
-            body { font-family: ui-sans-serif, system-ui, sans-serif; padding: 40px; background: white; color: black; }
-            @media print {
-              @page { margin: 1cm; }
-              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 0; }
-            }
-          </style>
-        </head>
-        <body>
-          ${printContent.innerHTML}
-          <script>
-            window.onload = function() {
-              setTimeout(function() {
-                window.print();
-              }, 800);
-            }
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-  };
-
   const handleExportCsv = () => {
     if (!reportData) return;
     
@@ -182,9 +142,165 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ trips, vehicles, drive
     URL.revokeObjectURL(url);
   };
 
-  if (drivers.length === 0 && vehicles.length === 0) {
-     return <div className="text-center py-10 text-gray-500">Nejdříve přidejte data (řidiče nebo vozidla).</div>;
-  }
+  const renderReportContent = () => {
+    if (!reportData || reportData.totalKm === 0) {
+       return (
+        <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
+            <div className="mx-auto h-16 w-16 text-gray-300 mb-4">
+                <FileText className="w-full h-full" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900">Žádná data pro zobrazení</h3>
+            <p className="text-gray-500 mt-1">
+                {reportType === 'driver' 
+                    ? 'Pro vybraného řidiče a měsíc neexistují žádné záznamy.' 
+                    : 'Pro vybrané vozidlo a měsíc neexistují žádné záznamy.'}
+            </p>
+        </div>
+       );
+    }
+
+    return (
+        <div className="bg-white rounded-xl shadow-lg p-6 md:p-12 max-w-4xl mx-auto border border-gray-100 text-gray-900" id="printable-report">
+            
+            {/* Report Header */}
+            <div className="border-b border-gray-200 pb-6 mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                      {reportType === 'driver' ? 'Výkaz jízd řidiče' : 'Kniha jízd vozidla'}
+                    </h1>
+                    <p className="text-gray-500 text-sm">Podklad pro mzdovou účtárnu a controlling</p>
+                </div>
+                <div className="text-left sm:text-right">
+                    <div className="text-lg font-bold text-gray-900">
+                      {reportType === 'driver' ? getDriverName(selectedDriverId) : getVehicleName(selectedVehicleId)}
+                    </div>
+                    <div className="text-sm text-gray-900 mt-1 font-medium">Období: {selectedMonth}</div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                {/* Payroll/Usage Section */}
+                <div>
+                    <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        {reportType === 'driver' ? <User size={16} /> : <Car size={16} />}
+                        {reportType === 'driver' ? 'Mzdové údaje' : 'Využití vozidla'}
+                    </h3>
+                    <div className="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                        <div className="flex justify-between items-center mb-3">
+                            <span className="text-gray-700 font-medium">Celkem ujeto</span>
+                            <span className="text-xl font-bold text-gray-900">{reportData.totalKm.toLocaleString()} km</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2 mb-4 overflow-hidden">
+                            <div 
+                                className="bg-blue-600 h-2 rounded-full" 
+                                style={{ width: `${(reportData.businessKm / reportData.totalKm) * 100}%` }}
+                            ></div>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                            <div className="flex justify-between text-blue-800">
+                                <span>Služební</span>
+                                <span className="font-medium">{reportData.businessKm.toLocaleString()} km</span>
+                            </div>
+                            <div className="flex justify-between text-purple-800">
+                                <span>Soukromé</span>
+                                <span className="font-medium">{reportData.privateKm.toLocaleString()} km</span>
+                            </div>
+                        </div>
+                        <div className="mt-4 pt-4 border-t border-gray-200 text-xs text-gray-600">
+                            <strong>{reportType === 'driver' ? 'Použitá vozidla:' : 'Řidiči:'}</strong>
+                            <div className="mt-1 leading-relaxed">
+                                {reportData.relatedResources.join(', ')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Controlling Section */}
+                <div>
+                    <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <Briefcase size={16} />
+                        Náklady na projekty
+                    </h3>
+                    <div className="space-y-3">
+                        {reportData.projectStats.map((stat) => (
+                            <div key={stat.orderId} className="relative">
+                                <div className="flex justify-between text-sm mb-1 z-10 relative">
+                                    <span className="font-medium text-gray-800 truncate max-w-[180px]">{stat.name}</span>
+                                    <span className="text-gray-600 whitespace-nowrap">{stat.km.toLocaleString()} km ({Math.round(stat.percentage)}%)</span>
+                                </div>
+                                <div className="w-full bg-gray-100 rounded-md h-8 overflow-hidden relative flex items-center px-2">
+                                    <div 
+                                        className="absolute left-0 top-0 bottom-0 bg-blue-50 border-r border-blue-100" 
+                                        style={{ width: `${stat.percentage}%` }}
+                                    ></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Fuel Section */}
+            <div className="mb-10">
+                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <Fuel size={16} />
+                    Tankování a spotřeba
+                </h3>
+                {reportData.fuelTrips.length > 0 ? (
+                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Datum</th>
+                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Místo</th>
+                                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Množství</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                                {reportData.fuelTrips.map(t => (
+                                    <tr key={t.id}>
+                                        <td className="px-4 py-2 text-sm text-gray-900">{new Date(t.date).toLocaleDateString('cs-CZ')}</td>
+                                        <td className="px-4 py-2 text-sm text-gray-600">{t.destination}</td>
+                                        <td className="px-4 py-2 text-sm text-gray-900 text-right font-medium">{t.fuelLiters} l</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                            <tfoot className="bg-gray-50">
+                                <tr>
+                                    <td colSpan={2} className="px-4 py-2 text-sm font-bold text-gray-900">Celkem tankováno</td>
+                                    <td className="px-4 py-2 text-right text-sm font-bold text-gray-900">{reportData.totalFuel} l</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                        <div className="p-3 bg-orange-50 text-orange-800 text-sm border-t border-orange-100 flex justify-between">
+                            <span>Průměrná měsíční spotřeba (orientační):</span>
+                            <span className="font-bold">{reportData.avgConsumption.toFixed(1)} l/100km</span>
+                        </div>
+                    </div>
+                ) : (
+                    <p className="text-sm text-gray-500 italic border border-dashed border-gray-200 p-4 rounded-lg text-center">
+                        V tomto měsíci nebylo evidováno žádné tankování.
+                    </p>
+                )}
+            </div>
+
+            {/* Signature Section */}
+            <div className="mt-16 pt-8 border-t border-gray-200 grid grid-cols-2 gap-10 sm:gap-20 break-inside-avoid">
+                <div className="text-center">
+                    <div className="border-b border-gray-300 h-8 mb-2"></div>
+                    <p className="text-xs text-gray-500 uppercase">
+                        {reportType === 'driver' ? 'Podpis řidiče' : 'Správce vozidla'}
+                    </p>
+                </div>
+                <div className="text-center">
+                    <div className="border-b border-gray-300 h-8 mb-2"></div>
+                    <p className="text-xs text-gray-500 uppercase">Schválil (Nadřízený)</p>
+                </div>
+            </div>
+
+        </div>
+    );
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -260,10 +376,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ trips, vehicles, drive
                 className="flex-1 xl:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-50"
              >
                 <Download size={16} />
-                Excel (CSV)
+                Excel
              </button>
              <button 
-                onClick={handlePrint}
+                onClick={() => setShowPrintPreview(true)}
                 disabled={!reportData || reportData.totalKm === 0}
                 className="flex-1 xl:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
              >
@@ -273,158 +389,37 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ trips, vehicles, drive
         </div>
       </div>
 
-      {/* Report Content - This is what gets printed */}
-      {reportData && reportData.totalKm > 0 ? (
-        <div className="bg-white rounded-xl shadow-lg p-8 md:p-12 max-w-4xl mx-auto border border-gray-100 text-gray-900" id="printable-report">
+      {/* Main View Report Content */}
+      {renderReportContent()}
+
+      {/* Full Screen Print Preview Modal */}
+      {showPrintPreview && (
+        <div id="print-preview-container" className="fixed inset-0 z-50 bg-white overflow-y-auto animate-fade-in">
+            {/* Sticky Header - Hidden in Print */}
+            <div className="sticky top-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-b border-gray-200 p-4 flex items-center justify-between no-print z-10 shadow-sm">
+                <button 
+                    onClick={() => setShowPrintPreview(false)}
+                    className="flex items-center gap-2 text-gray-600 font-medium hover:bg-gray-100 px-4 py-2 rounded-lg transition-colors"
+                >
+                    <ArrowLeft size={20} />
+                    Zpět
+                </button>
+                <div className="font-bold text-gray-900 hidden sm:block">Náhled tisku</div>
+                <button 
+                    onClick={() => window.print()}
+                    className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold shadow-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                >
+                    <Printer size={20} />
+                    Tisknout
+                </button>
+            </div>
             
-            {/* Report Header */}
-            <div className="border-b border-gray-200 pb-6 mb-8 flex justify-between items-start">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                      {reportType === 'driver' ? 'Výkaz jízd řidiče' : 'Kniha jízd vozidla'}
-                    </h1>
-                    <p className="text-gray-500 text-sm">Podklad pro mzdovou účtárnu a controlling</p>
-                </div>
-                <div className="text-right">
-                    <div className="text-lg font-bold text-gray-900">
-                      {reportType === 'driver' ? getDriverName(selectedDriverId) : getVehicleName(selectedVehicleId)}
-                    </div>
-                    <div className="text-sm text-gray-900 mt-1 font-medium">Období: {selectedMonth}</div>
+            {/* Preview Content */}
+            <div className="p-4 md:p-8 min-h-screen bg-gray-100 flex justify-center print:bg-white print:p-0">
+                <div className="w-full max-w-4xl print:max-w-none print:w-full">
+                    {renderReportContent()}
                 </div>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-                {/* Payroll/Usage Section */}
-                <div>
-                    <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                        {reportType === 'driver' ? <User size={16} /> : <Car size={16} />}
-                        {reportType === 'driver' ? 'Mzdové údaje' : 'Využití vozidla'}
-                    </h3>
-                    <div className="bg-gray-50 p-5 rounded-xl border border-gray-100">
-                        <div className="flex justify-between items-center mb-3">
-                            <span className="text-gray-700 font-medium">Celkem ujeto</span>
-                            <span className="text-xl font-bold text-gray-900">{reportData.totalKm.toLocaleString()} km</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2 mb-4 overflow-hidden">
-                            <div 
-                                className="bg-blue-600 h-2 rounded-full" 
-                                style={{ width: `${(reportData.businessKm / reportData.totalKm) * 100}%` }}
-                            ></div>
-                        </div>
-                        <div className="space-y-2 text-sm">
-                            <div className="flex justify-between text-blue-800">
-                                <span>Služební</span>
-                                <span className="font-medium">{reportData.businessKm.toLocaleString()} km</span>
-                            </div>
-                            <div className="flex justify-between text-purple-800">
-                                <span>Soukromé</span>
-                                <span className="font-medium">{reportData.privateKm.toLocaleString()} km</span>
-                            </div>
-                        </div>
-                        <div className="mt-4 pt-4 border-t border-gray-200 text-xs text-gray-600">
-                            <strong>{reportType === 'driver' ? 'Použitá vozidla:' : 'Řidiči:'}</strong>
-                            <div className="mt-1 leading-relaxed">
-                                {reportData.relatedResources.join(', ')}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Controlling Section */}
-                <div>
-                    <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                        <Briefcase size={16} />
-                        Náklady na projekty
-                    </h3>
-                    <div className="space-y-3">
-                        {reportData.projectStats.map((stat) => (
-                            <div key={stat.orderId} className="relative">
-                                <div className="flex justify-between text-sm mb-1 z-10 relative">
-                                    <span className="font-medium text-gray-800">{stat.name}</span>
-                                    <span className="text-gray-600">{stat.km.toLocaleString()} km ({Math.round(stat.percentage)}%)</span>
-                                </div>
-                                <div className="w-full bg-gray-100 rounded-md h-8 overflow-hidden relative flex items-center px-2">
-                                    <div 
-                                        className="absolute left-0 top-0 bottom-0 bg-blue-50 border-r border-blue-100" 
-                                        style={{ width: `${stat.percentage}%` }}
-                                    ></div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-
-            {/* Fuel Section */}
-            <div className="mb-10">
-                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <Fuel size={16} />
-                    Tankování a spotřeba
-                </h3>
-                {reportData.fuelTrips.length > 0 ? (
-                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Datum</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Místo</th>
-                                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Množství</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200">
-                                {reportData.fuelTrips.map(t => (
-                                    <tr key={t.id}>
-                                        <td className="px-4 py-2 text-sm text-gray-900">{new Date(t.date).toLocaleDateString('cs-CZ')}</td>
-                                        <td className="px-4 py-2 text-sm text-gray-600">{t.destination}</td>
-                                        <td className="px-4 py-2 text-sm text-gray-900 text-right font-medium">{t.fuelLiters} l</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                            <tfoot className="bg-gray-50">
-                                <tr>
-                                    <td colSpan={2} className="px-4 py-2 text-sm font-bold text-gray-900">Celkem tankováno</td>
-                                    <td className="px-4 py-2 text-right text-sm font-bold text-gray-900">{reportData.totalFuel} l</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                        <div className="p-3 bg-orange-50 text-orange-800 text-sm border-t border-orange-100 flex justify-between">
-                            <span>Průměrná měsíční spotřeba (orientační):</span>
-                            <span className="font-bold">{reportData.avgConsumption.toFixed(1)} l/100km</span>
-                        </div>
-                    </div>
-                ) : (
-                    <p className="text-sm text-gray-500 italic border border-dashed border-gray-200 p-4 rounded-lg text-center">
-                        V tomto měsíci nebylo evidováno žádné tankování.
-                    </p>
-                )}
-            </div>
-
-            {/* Signature Section */}
-            <div className="mt-16 pt-8 border-t border-gray-200 grid grid-cols-2 gap-20 break-inside-avoid">
-                <div className="text-center">
-                    <div className="border-b border-gray-300 h-8 mb-2"></div>
-                    <p className="text-xs text-gray-500 uppercase">
-                        {reportType === 'driver' ? 'Podpis řidiče' : 'Správce vozidla'}
-                    </p>
-                </div>
-                <div className="text-center">
-                    <div className="border-b border-gray-300 h-8 mb-2"></div>
-                    <p className="text-xs text-gray-500 uppercase">Schválil (Nadřízený)</p>
-                </div>
-            </div>
-
-        </div>
-      ) : (
-        <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
-            <div className="mx-auto h-16 w-16 text-gray-300 mb-4">
-                <FileText className="w-full h-full" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900">Žádná data pro zobrazení</h3>
-            <p className="text-gray-500 mt-1">
-                {reportType === 'driver' 
-                    ? 'Pro vybraného řidiče a měsíc neexistují žádné záznamy.' 
-                    : 'Pro vybrané vozidlo a měsíc neexistují žádné záznamy.'}
-            </p>
         </div>
       )}
     </div>

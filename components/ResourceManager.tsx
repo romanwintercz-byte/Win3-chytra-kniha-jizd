@@ -118,14 +118,14 @@ export const ResourceManager: React.FC<ResourceManagerProps> = ({
                 <input
                   type="text"
                   placeholder="Kód (nepovinné)"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-green-500"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-green-500 text-gray-900"
                   value={editingOrder ? editingOrder.code : newOrder.code}
                   onChange={e => editingOrder ? setEditingOrder({...editingOrder, code: e.target.value}) : setNewOrder({...newOrder, code: e.target.value})}
                 />
                 <input
                   type="text"
                   placeholder="Název zakázky"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-green-500"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-green-500 text-gray-900"
                   value={editingOrder ? editingOrder.name : newOrder.name}
                   onChange={e => editingOrder ? setEditingOrder({...editingOrder, name: e.target.value}) : setNewOrder({...newOrder, name: e.target.value})}
                   required
@@ -193,7 +193,7 @@ export const ResourceManager: React.FC<ResourceManagerProps> = ({
                 <input
                   type="text"
                   placeholder="Název (např. Škoda)"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-900"
                   value={editingVehicle ? editingVehicle.name : newVehicle.name}
                   onChange={e => editingVehicle ? setEditingVehicle({...editingVehicle, name: e.target.value}) : setNewVehicle({...newVehicle, name: e.target.value})}
                   required
@@ -201,7 +201,7 @@ export const ResourceManager: React.FC<ResourceManagerProps> = ({
                 <input
                   type="text"
                   placeholder="SPZ"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-900"
                   value={editingVehicle ? editingVehicle.licensePlate : newVehicle.licensePlate}
                   onChange={e => editingVehicle ? setEditingVehicle({...editingVehicle, licensePlate: e.target.value}) : setNewVehicle({...newVehicle, licensePlate: e.target.value})}
                   required
@@ -267,7 +267,7 @@ export const ResourceManager: React.FC<ResourceManagerProps> = ({
                 <input
                   type="text"
                   placeholder="Jméno a příjmení"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-purple-500"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-purple-500 text-gray-900"
                   value={editingDriver ? editingDriver.name : newDriver.name}
                   onChange={e => editingDriver ? setEditingDriver({...editingDriver, name: e.target.value}) : setNewDriver({...newDriver, name: e.target.value})}
                   required
