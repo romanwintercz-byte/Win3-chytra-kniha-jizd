@@ -260,7 +260,11 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
     } catch (e: any) {
       console.error("AI processing error:", e);
       if (e.message === 'API Key not found') {
-        alert('Pro použití AI funkcí chybí API klíč. Prosím nastavte proměnnou prostředí API_KEY ve vašem hostingu (např. Vercel).');
+        alert(
+          "Chyba: API klíč nebyl nalezen.\n\n" +
+          "Pokud aplikaci hostujete na Vercelu, proměnné prostředí jsou pro prohlížeč skryté.\n" +
+          "Přejmenujte proměnnou v nastavení Vercelu na 'VITE_API_KEY' a aplikaci znovu nasaďte (Redeploy)."
+        );
       } else {
         alert('Nepodařilo se zpracovat text. Zkuste to prosím znovu nebo údaje zadejte ručně.');
       }

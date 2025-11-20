@@ -1,17 +1,40 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AISuggestion } from "../types";
 
-export const parseTripFromText = async (text: string): Promise<AISuggestion> => {
-  let apiKey = '';
+// Helper to safely retrieve API key from various environment configurations
+const getApiKey = (): string => {
+  // 1. Try standard process.env (Node/Webpack/CRA/Next.js)
   try {
-    apiKey = process.env.API_KEY || '';
-  } catch (e) {
-    // process might be undefined in some browser environments
-    console.error("Cannot access process.env");
-  }
+    if (typeof process !== 'undefined' && process.env?.API_KEY) {
+      return process.env.API_KEY;
+    }
+  } catch (e) {}
+
+  // 2. Try Vite environment variables (Standard for Vercel + Vite deployments)
+  // Vercel requires 'VITE_' prefix for variables to be exposed to the browser
+  try {
+    // @ts-ignore
+    if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_KEY) {
+      // @ts-ignore
+      return import.meta.env.VITE_API_KEY;
+    }
+  } catch (e) {}
+
+  // 3. Try React App prefix (Standard for CRA)
+  try {
+    if (typeof process !== 'undefined' && process.env?.REACT_APP_API_KEY) {
+      return process.env.REACT_APP_API_KEY;
+    }
+  } catch (e) {}
+
+  return '';
+};
+
+export const parseTripFromText = async (text: string): Promise<AISuggestion> => {
+  const apiKey = getApiKey();
 
   if (!apiKey) {
-    console.error("API Key is missing");
+    console.error("API Key is missing. Checked process.env.API_KEY, VITE_API_KEY, and REACT_APP_API_KEY.");
     throw new Error("API Key not found");
   }
 
