@@ -32,8 +32,6 @@
       body {
         font-family: 'Inter', sans-serif;
         background-color: #f3f4f6;
-        /* Ensure visibility is visible by default to prevent print styles from leaking */
-        visibility: visible; 
       }
       
       /* Hide scrollbar for cleaner UI in some containers */
@@ -43,54 +41,6 @@
       .no-scrollbar {
         -ms-overflow-style: none;
         scrollbar-width: none;
-      }
-
-      /* PRINT STYLES - Safely wrapped */
-      @media print {
-        @page {
-          margin: 0.5cm;
-          size: auto; 
-        }
-        
-        body {
-          background: white !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          overflow: visible !important;
-        }
-
-        /* 
-           STRATEGY: Hide everything in the body, 
-           then make the print preview container visible.
-           Using visibility:hidden preserves layout flow for the container to appear correctly.
-        */
-        body * {
-          visibility: hidden;
-        }
-
-        /* The Print Preview Container */
-        #print-preview-container, 
-        #print-preview-container * {
-          visibility: visible !important;
-        }
-
-        #print-preview-container {
-          position: fixed;
-          left: 0;
-          top: 0;
-          width: 100%;
-          height: auto;
-          margin: 0;
-          padding: 0;
-          background: white;
-          z-index: 9999;
-          overflow: visible;
-        }
-
-        /* Hide navigation buttons inside the preview during print */
-        .no-print {
-          display: none !important;
-        }
       }
     </style>
   <script type="importmap">

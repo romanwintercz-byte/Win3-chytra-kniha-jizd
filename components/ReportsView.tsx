@@ -160,7 +160,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ trips, vehicles, drive
     }
 
     return (
-        <div className="bg-white rounded-xl shadow-lg p-6 md:p-12 max-w-4xl mx-auto border border-gray-100 text-gray-900" id="printable-report">
+        <div className="bg-white rounded-xl shadow-lg p-6 md:p-12 max-w-4xl mx-auto border border-gray-100 text-gray-900 print:shadow-none print:border-none print:p-0 print:max-w-none" id="printable-report">
             
             {/* Report Header */}
             <div className="border-b border-gray-200 pb-6 mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
@@ -178,30 +178,30 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ trips, vehicles, drive
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 print:grid-cols-2 print:gap-8">
                 {/* Payroll/Usage Section */}
                 <div>
                     <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
                         {reportType === 'driver' ? <User size={16} /> : <Car size={16} />}
                         {reportType === 'driver' ? 'Mzdové údaje' : 'Využití vozidla'}
                     </h3>
-                    <div className="bg-gray-50 p-5 rounded-xl border border-gray-100">
+                    <div className="bg-gray-50 p-5 rounded-xl border border-gray-100 print:bg-gray-50 print:border-gray-200">
                         <div className="flex justify-between items-center mb-3">
                             <span className="text-gray-700 font-medium">Celkem ujeto</span>
                             <span className="text-xl font-bold text-gray-900">{reportData.totalKm.toLocaleString()} km</span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2 mb-4 overflow-hidden">
+                        <div className="w-full bg-gray-200 rounded-full h-2 mb-4 overflow-hidden print:bg-gray-300">
                             <div 
-                                className="bg-blue-600 h-2 rounded-full" 
+                                className="bg-blue-600 h-2 rounded-full print:bg-black" 
                                 style={{ width: `${(reportData.businessKm / reportData.totalKm) * 100}%` }}
                             ></div>
                         </div>
                         <div className="space-y-2 text-sm">
-                            <div className="flex justify-between text-blue-800">
+                            <div className="flex justify-between text-blue-800 print:text-black">
                                 <span>Služební</span>
                                 <span className="font-medium">{reportData.businessKm.toLocaleString()} km</span>
                             </div>
-                            <div className="flex justify-between text-purple-800">
+                            <div className="flex justify-between text-purple-800 print:text-black">
                                 <span>Soukromé</span>
                                 <span className="font-medium">{reportData.privateKm.toLocaleString()} km</span>
                             </div>
@@ -228,9 +228,9 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ trips, vehicles, drive
                                     <span className="font-medium text-gray-800 truncate max-w-[180px]">{stat.name}</span>
                                     <span className="text-gray-600 whitespace-nowrap">{stat.km.toLocaleString()} km ({Math.round(stat.percentage)}%)</span>
                                 </div>
-                                <div className="w-full bg-gray-100 rounded-md h-8 overflow-hidden relative flex items-center px-2">
+                                <div className="w-full bg-gray-100 rounded-md h-8 overflow-hidden relative flex items-center px-2 print:bg-gray-100">
                                     <div 
-                                        className="absolute left-0 top-0 bottom-0 bg-blue-50 border-r border-blue-100" 
+                                        className="absolute left-0 top-0 bottom-0 bg-blue-50 border-r border-blue-100 print:bg-gray-300 print:border-gray-400" 
                                         style={{ width: `${stat.percentage}%` }}
                                     ></div>
                                 </div>
@@ -241,7 +241,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ trips, vehicles, drive
             </div>
 
             {/* Fuel Section */}
-            <div className="mb-10">
+            <div className="mb-10 break-inside-avoid">
                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
                     <Fuel size={16} />
                     Tankování a spotřeba
@@ -272,7 +272,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ trips, vehicles, drive
                                 </tr>
                             </tfoot>
                         </table>
-                        <div className="p-3 bg-orange-50 text-orange-800 text-sm border-t border-orange-100 flex justify-between">
+                        <div className="p-3 bg-orange-50 text-orange-800 text-sm border-t border-orange-100 flex justify-between print:bg-white print:text-black print:border-gray-200">
                             <span>Průměrná měsíční spotřeba (orientační):</span>
                             <span className="font-bold">{reportData.avgConsumption.toFixed(1)} l/100km</span>
                         </div>
@@ -341,7 +341,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ trips, vehicles, drive
                     className="w-full md:w-64 pl-10 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                  >
                     {drivers.map(d => (
-                        <option key={d.id} value={d.id}>{d.name}</option>
+                        <option key={d.id} value={d.id} className="text-gray-900">{d.name}</option>
                     ))}
                  </select>
                ) : (
@@ -351,7 +351,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ trips, vehicles, drive
                     className="w-full md:w-64 pl-10 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                  >
                     {vehicles.map(v => (
-                        <option key={v.id} value={v.id}>{v.name} ({v.licensePlate})</option>
+                        <option key={v.id} value={v.id} className="text-gray-900">{v.name} ({v.licensePlate})</option>
                     ))}
                  </select>
                )}
@@ -394,7 +394,28 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ trips, vehicles, drive
 
       {/* Full Screen Print Preview Modal */}
       {showPrintPreview && (
-        <div id="print-preview-container" className="fixed inset-0 z-50 bg-white overflow-y-auto animate-fade-in">
+        <div id="print-preview-container" className="fixed inset-0 z-[9999] bg-white overflow-y-auto animate-fade-in">
+            {/* Safe Local Print Style - Only exists when this modal is open */}
+            <style>{`
+              @media print {
+                body > *:not(#print-preview-container) {
+                  display: none !important;
+                }
+                #print-preview-container {
+                  position: absolute;
+                  top: 0;
+                  left: 0;
+                  width: 100%;
+                  height: 100%;
+                  overflow: visible;
+                  background: white;
+                }
+                .no-print {
+                  display: none !important;
+                }
+              }
+            `}</style>
+
             {/* Sticky Header - Hidden in Print via CSS */}
             <div className="sticky top-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-b border-gray-200 p-4 flex items-center justify-between no-print z-10 shadow-sm">
                 <button 
@@ -416,7 +437,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ trips, vehicles, drive
             
             {/* Preview Content */}
             <div className="p-4 md:p-8 min-h-screen bg-gray-100 flex justify-center print:bg-white print:p-0">
-                <div className="w-full max-w-4xl print:max-w-none print:w-full">
+                <div className="w-full max-w-4xl print:max-w-none print:w-full bg-white shadow-xl print:shadow-none p-8 md:p-12 print:p-0 rounded-xl print:rounded-none">
                     {renderReportContent()}
                 </div>
             </div>
