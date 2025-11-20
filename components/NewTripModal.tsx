@@ -257,8 +257,13 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
       }
       
       setMode('manual');
-    } catch (e) {
-      alert('Nepodařilo se zpracovat text.');
+    } catch (e: any) {
+      console.error("AI processing error:", e);
+      if (e.message === 'API Key not found') {
+        alert('Pro použití AI funkcí chybí API klíč. Prosím nastavte proměnnou prostředí API_KEY ve vašem hostingu (např. Vercel).');
+      } else {
+        alert('Nepodařilo se zpracovat text. Zkuste to prosím znovu nebo údaje zadejte ručně.');
+      }
     } finally {
       setIsProcessing(false);
     }

@@ -2,12 +2,20 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { AISuggestion } from "../types";
 
 export const parseTripFromText = async (text: string): Promise<AISuggestion> => {
-  if (!process.env.API_KEY) {
+  let apiKey = '';
+  try {
+    apiKey = process.env.API_KEY || '';
+  } catch (e) {
+    // process might be undefined in some browser environments
+    console.error("Cannot access process.env");
+  }
+
+  if (!apiKey) {
     console.error("API Key is missing");
     throw new Error("API Key not found");
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey });
   const today = new Date().toISOString().split('T')[0];
 
   try {
@@ -57,6 +65,6 @@ export const parseTripFromText = async (text: string): Promise<AISuggestion> => 
     return JSON.parse(jsonText) as AISuggestion;
   } catch (error) {
     console.error("Error parsing trip with Gemini:", error);
-    return {};
+    throw error; // Re-throw to be caught by the UI
   }
 };
