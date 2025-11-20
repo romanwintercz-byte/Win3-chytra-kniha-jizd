@@ -395,7 +395,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ trips, vehicles, drive
       {/* Full Screen Print Preview Modal */}
       {showPrintPreview && (
         <div id="print-preview-container" className="fixed inset-0 z-50 bg-white overflow-y-auto animate-fade-in">
-            {/* Sticky Header - Hidden in Print */}
+            {/* Sticky Header - Hidden in Print via CSS */}
             <div className="sticky top-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-b border-gray-200 p-4 flex items-center justify-between no-print z-10 shadow-sm">
                 <button 
                     onClick={() => setShowPrintPreview(false)}

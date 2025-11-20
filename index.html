@@ -20,50 +20,43 @@
         scrollbar-width: none;
       }
 
+      /* Print Styles - Using visibility to ensure only the preview is printed */
       @media print {
-        /* Reset padding and margins for print */
         @page {
-          margin: 1cm;
+          margin: 0.5cm;
           size: auto; 
         }
+        
         body {
           background: white !important;
-          padding: 0 !important;
           margin: 0 !important;
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
+          padding: 0 !important;
         }
 
-        /* Hide the root app and all non-print elements */
-        #root, nav, button, .no-print, .hidden-print {
-          display: none !important;
+        /* Hide everything by default */
+        body * {
+          visibility: hidden;
         }
 
-        /* Only show the dedicated print preview container */
+        /* Show only the print preview container and its children */
+        #print-preview-container, #print-preview-container * {
+          visibility: visible;
+        }
+
+        /* Position the preview container over everything */
         #print-preview-container {
-          display: block !important;
-          position: absolute !important;
-          top: 0 !important;
-          left: 0 !important;
-          width: 100% !important;
-          height: auto !important;
-          z-index: 9999 !important;
-          overflow: visible !important;
-          background: white !important;
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          margin: 0;
+          padding: 0;
+          background: white;
         }
-        
-        #print-preview-container * {
-          visibility: visible !important;
-          box-shadow: none !important; /* Remove shadows for print */
-        }
-        
-        /* Ensure report looks good on paper */
-        #printable-report {
-          box-shadow: none !important;
-          border: none !important;
-          padding: 0 !important;
-          margin: 0 !important;
-          max-width: 100% !important;
+
+        /* Hide navigation buttons inside the preview during print */
+        .no-print {
+          display: none !important;
         }
       }
     </style>
