@@ -60,7 +60,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ trips, vehicles, drive
     const businessKm = filteredTrips.filter(t => t.type === TripType.BUSINESS).reduce((acc, t) => acc + t.distanceKm, 0);
     const privateKm = filteredTrips.filter(t => t.type === TripType.PRIVATE).reduce((acc, t) => acc + t.distanceKm, 0);
     
-    // Get list of related resources (If report is for driver -> show vehicles used. If for vehicle -> show drivers).
+    // Get list of related resources
     let relatedResources: string[] = [];
     if (reportType === 'driver') {
         const uniqueIds = Array.from(new Set(filteredTrips.map(t => t.vehicleId))) as string[];
