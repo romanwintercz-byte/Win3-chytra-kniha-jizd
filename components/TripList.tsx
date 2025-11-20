@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Trip, TripType, Vehicle, Driver, Order } from '../types';
-import { Car, Trash2, Calendar, Fuel, Droplet, Pencil } from 'lucide-react';
+import { Car, Trash2, Calendar, Fuel, Droplet, Pencil, MapPin, Navigation, ArrowRight } from 'lucide-react';
 
 interface TripListProps {
   trips: Trip[];
@@ -85,13 +85,14 @@ export const TripList: React.FC<TripListProps> = ({ trips, vehicles, drivers, or
                 {avgConsumption && (
                   <div className="bg-green-50 px-2 py-1 rounded-md text-green-700 flex items-center gap-1 border border-green-100">
                     <Droplet size={10} />
-                    Spotřeba: {avgConsumption} l/100km
+                    {avgConsumption} l/100km
                   </div>
                 )}
               </div>
             </div>
             
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            {/* DESKTOP TABLE VIEW */}
+            <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -103,7 +104,7 @@ export const TripList: React.FC<TripListProps> = ({ trips, vehicles, drivers, or
                       <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Stav Tach.</th>
                        <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ujeto</th>
                       <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">PHM</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Auto / Řidič</th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Auto / Řidič</th>
                       <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Akce</th>
                     </tr>
                   </thead>
@@ -151,7 +152,7 @@ export const TripList: React.FC<TripListProps> = ({ trips, vehicles, drivers, or
                                <span className="text-gray-300">-</span>
                              )}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm hidden md:table-cell">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm hidden lg:table-cell">
                              <div className="flex flex-col">
                                <span className="text-gray-900 font-bold">{getDriverName(trip.driverId)}</span>
                                <span className="text-xs text-gray-600 font-medium mt-0.5">{getVehicleName(trip.vehicleId)} ({getVehiclePlate(trip.vehicleId)})</span>
@@ -188,6 +189,74 @@ export const TripList: React.FC<TripListProps> = ({ trips, vehicles, drivers, or
                 </table>
               </div>
             </div>
+
+            {/* MOBILE CARD VIEW */}
+            <div className="md:hidden space-y-3">
+              {monthTrips.map((trip) => {
+                const dateObj = new Date(trip.date);
+                const day = dateObj.getDate();
+                const monthName = dateObj.toLocaleDateString('cs-CZ', { month: 'short' }).toUpperCase();
+                const orderInfo = getOrderInfo(trip.orderId);
+                
+                return (
+                  <div 
+                    key={trip.id}
+                    onClick={() => onEdit(trip)}
+                    className={`bg-white rounded-xl shadow-sm border-l-4 p-4 relative active:scale-[0.99] transition-transform ${trip.type === TripType.BUSINESS ? 'border-l-blue-500' : 'border-l-purple-500'}`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex gap-3">
+                        {/* Date Box */}
+                        <div className="flex flex-col items-center justify-center bg-gray-50 rounded-lg w-12 h-12 shrink-0 border border-gray-100">
+                           <span className="text-xl font-bold text-gray-900 leading-none">{day}</span>
+                           <span className="text-[10px] font-bold text-gray-500 mt-0.5">{monthName}</span>
+                        </div>
+
+                        <div className="flex flex-col">
+                          {/* Route */}
+                          <div className="flex flex-wrap items-center gap-1 text-sm font-bold text-gray-900 mb-1">
+                            <span className="line-clamp-1">{trip.origin}</span>
+                            <ArrowRight size={12} className="text-gray-400 shrink-0" />
+                            <span className="line-clamp-1">{trip.destination}</span>
+                          </div>
+                          
+                          {/* Details */}
+                          <div className="text-xs text-gray-500 flex flex-col gap-1">
+                            <div className="flex items-center gap-1.5">
+                               <Car size={12} className="shrink-0" />
+                               <span className="truncate max-w-[120px]">{getVehicleName(trip.vehicleId)}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 font-medium text-gray-700">
+                               <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${trip.type === TripType.BUSINESS ? 'bg-blue-500' : 'bg-purple-500'}`}></span>
+                               <span className="truncate max-w-[150px]">{orderInfo.name}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Right Side stats */}
+                      <div className="flex flex-col items-end gap-2">
+                         <span className="text-lg font-bold text-gray-900 whitespace-nowrap">
+                           {trip.distanceKm} <span className="text-xs font-normal text-gray-500">km</span>
+                         </span>
+                         {trip.fuelLiters && (
+                            <span className="bg-orange-50 text-orange-700 text-[10px] px-1.5 py-0.5 rounded font-bold flex items-center gap-1">
+                              <Fuel size={10} /> {trip.fuelLiters}l
+                            </span>
+                         )}
+                         <button 
+                            onClick={(e) => { e.stopPropagation(); onDelete(trip.id); }}
+                            className="p-2 -mr-2 text-gray-300 hover:text-red-500 transition-colors"
+                         >
+                            <Trash2 size={16} />
+                         </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
           </div>
         );
       })}

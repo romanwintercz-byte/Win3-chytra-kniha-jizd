@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   Plus, 
@@ -8,7 +8,8 @@ import {
   PieChart as PieIcon,
   FileText,
   Settings as SettingsIcon,
-  Info
+  Info,
+  Home
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Trip, TripType, Vehicle, Driver, Order, INITIAL_TRIPS, INITIAL_VEHICLES, INITIAL_DRIVERS, INITIAL_ORDERS, AppDataExport } from './types';
@@ -22,10 +23,29 @@ import { AboutView } from './components/AboutView';
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'dashboard' | 'settings' | 'reports' | 'about'>('dashboard');
   
-  const [trips, setTrips] = useState<Trip[]>(INITIAL_TRIPS);
-  const [vehicles, setVehicles] = useState<Vehicle[]>(INITIAL_VEHICLES);
-  const [drivers, setDrivers] = useState<Driver[]>(INITIAL_DRIVERS);
-  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
+  // --- PERSISTENCE LOGIC START ---
+  // Load from localStorage or fallback to INITIAL_ constants
+  const loadFromStorage = <T,>(key: string, fallback: T): T => {
+    try {
+      const saved = localStorage.getItem(key);
+      return saved ? JSON.parse(saved) : fallback;
+    } catch (e) {
+      console.error(`Error loading ${key}`, e);
+      return fallback;
+    }
+  };
+
+  const [trips, setTrips] = useState<Trip[]>(() => loadFromStorage('app_trips', INITIAL_TRIPS));
+  const [vehicles, setVehicles] = useState<Vehicle[]>(() => loadFromStorage('app_vehicles', INITIAL_VEHICLES));
+  const [drivers, setDrivers] = useState<Driver[]>(() => loadFromStorage('app_drivers', INITIAL_DRIVERS));
+  const [orders, setOrders] = useState<Order[]>(() => loadFromStorage('app_orders', INITIAL_ORDERS));
+
+  // Save to localStorage whenever data changes
+  useEffect(() => { localStorage.setItem('app_trips', JSON.stringify(trips)); }, [trips]);
+  useEffect(() => { localStorage.setItem('app_vehicles', JSON.stringify(vehicles)); }, [vehicles]);
+  useEffect(() => { localStorage.setItem('app_drivers', JSON.stringify(drivers)); }, [drivers]);
+  useEffect(() => { localStorage.setItem('app_orders', JSON.stringify(orders)); }, [orders]);
+  // --- PERSISTENCE LOGIC END ---
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tripToEdit, setTripToEdit] = useState<Trip | null>(null);
@@ -129,11 +149,10 @@ const App: React.FC = () => {
                          `Importuje se ${importData.data.trips.length} jízd. Data ostatních řidičů zůstanou nedotčena.`;
       
       if (window.confirm(confirmMsg)) {
-        // 1. Merge Resources (Vehicles, Orders, Drivers) - avoid duplicates by ID
+        // 1. Merge Resources (Vehicles, Orders, Drivers)
         const mergeResources = <T extends { id: string }>(current: T[], incoming: T[]) => {
           const currentMap = new Map(current.map(i => [i.id, i]));
           incoming.forEach(item => {
-            // If exists, we could update it, or ignore. Let's ensure it exists.
             if (!currentMap.has(item.id)) {
               currentMap.set(item.id, item);
             }
@@ -145,7 +164,7 @@ const App: React.FC = () => {
         setDrivers(prev => mergeResources(prev, importData.data.drivers));
         setOrders(prev => mergeResources(prev, importData.data.orders));
 
-        // 2. Merge Trips (Update existing by ID, Add new)
+        // 2. Merge Trips
         setTrips(prevTrips => {
           const tripMap = new Map(prevTrips.map(t => [t.id, t]));
           let newCount = 0;
@@ -157,7 +176,7 @@ const App: React.FC = () => {
             } else {
               newCount++;
             }
-            tripMap.set(t.id, t); // Overwrite or Add
+            tripMap.set(t.id, t); 
           });
 
           alert(`Import dokončen.\nPřidáno nových jízd: ${newCount}\nAktualizováno jízd: ${updateCount}`);
@@ -168,10 +187,10 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f9fc] pb-20 md:pb-10">
+    <div className="min-h-screen bg-[#f8f9fc] pb-24 md:pb-10">
       
-      {/* Top Navigation - Hidden on print */}
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-30 print:hidden">
+      {/* Desktop Top Navigation - Hidden on Mobile */}
+      <nav className="bg-white border-b border-gray-200 sticky top-0 z-30 print:hidden hidden md:block">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center gap-2">
@@ -208,7 +227,7 @@ const App: React.FC = () => {
                 <Info size={16} />
                 O aplikaci
               </button>
-              <div className="w-px h-6 bg-gray-200 mx-2 hidden sm:block"></div>
+              <div className="w-px h-6 bg-gray-200 mx-2"></div>
               <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 font-medium border border-gray-200">
                  JD
               </div>
@@ -217,31 +236,51 @@ const App: React.FC = () => {
         </div>
       </nav>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Mobile Header - Simple */}
+      <div className="md:hidden bg-white p-4 flex items-center justify-between sticky top-0 z-20 border-b border-gray-100 shadow-sm">
+        <div className="flex items-center gap-2">
+          <div className="bg-blue-600 p-1.5 rounded-lg text-white">
+            <CarFront size={18} />
+          </div>
+          <h1 className="text-lg font-bold text-gray-900">Kniha Jízd</h1>
+        </div>
+        <div className="text-xs text-gray-500 font-medium">
+          {currentView === 'dashboard' && 'Přehled'}
+          {currentView === 'reports' && 'Reporty'}
+          {currentView === 'settings' && 'Nastavení'}
+          {currentView === 'about' && 'O aplikaci'}
+        </div>
+      </div>
+
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
         
         {currentView === 'dashboard' && (
           <>
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 animate-fade-in">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8 animate-fade-in">
               <StatsCard 
                 title="Celkem najeto" 
                 value={`${stats.totalKm.toLocaleString('cs-CZ')} km`}
                 icon={<TrendingUp size={20} />}
                 colorClass="bg-white"
               />
-              <StatsCard 
-                title="Služební cesty" 
-                value={`${stats.businessKm.toLocaleString('cs-CZ')} km`}
-                icon={<LayoutDashboard size={20} />}
-                colorClass="bg-blue-50 border-blue-100"
-                trend={`${Math.round((stats.businessKm / (stats.totalKm || 1)) * 100)}% celku`}
-              />
-              <StatsCard 
-                title="Počet jízd" 
-                value={stats.tripCount}
-                icon={<CalendarDays size={20} />}
-                colorClass="bg-purple-50 border-purple-100"
-              />
+              <div className="hidden md:block">
+                <StatsCard 
+                  title="Služební cesty" 
+                  value={`${stats.businessKm.toLocaleString('cs-CZ')} km`}
+                  icon={<LayoutDashboard size={20} />}
+                  colorClass="bg-blue-50 border-blue-100"
+                  trend={`${Math.round((stats.businessKm / (stats.totalKm || 1)) * 100)}% celku`}
+                />
+              </div>
+              <div className="hidden md:block">
+                <StatsCard 
+                  title="Počet jízd" 
+                  value={stats.tripCount}
+                  icon={<CalendarDays size={20} />}
+                  colorClass="bg-purple-50 border-purple-100"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
@@ -255,7 +294,7 @@ const App: React.FC = () => {
                       setTripToEdit(null);
                       setIsModalOpen(true);
                     }}
-                    className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors flex items-center gap-2 shadow-lg shadow-gray-200"
+                    className="hidden md:flex bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors items-center gap-2 shadow-lg shadow-gray-200"
                   >
                     <Plus size={16} />
                     Nová jízda
@@ -272,8 +311,8 @@ const App: React.FC = () => {
                 />
               </div>
 
-              {/* Right Column: Chart & Info */}
-              <div className="space-y-6">
+              {/* Right Column: Chart & Info (Desktop Only) */}
+              <div className="space-y-6 hidden lg:block">
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                   <div className="flex items-center justify-between mb-6">
                      <h3 className="text-base font-bold text-gray-900">Přehled kilometrů</h3>
@@ -309,7 +348,7 @@ const App: React.FC = () => {
                 <div className="bg-gradient-to-br from-indigo-600 to-blue-600 rounded-xl p-6 text-white shadow-lg">
                   <h3 className="font-bold text-lg mb-2">AI Asistent</h3>
                   <p className="text-blue-100 text-sm mb-4">
-                    Nebaví vás vyplňovat formuláře? Jednoduše napište nebo nadiktujte text jako "Včera na zakázku Stavba Brno, tachometr 150 500, tankováno 40 litrů" a AI za vás vše vyplní.
+                    Jednoduše napište nebo nadiktujte text jako "Včera cesta Brno Praha, 205km, služebně..."
                   </p>
                   <button 
                     onClick={() => {
@@ -322,6 +361,25 @@ const App: React.FC = () => {
                   </button>
                 </div>
               </div>
+              
+              {/* Mobile AI Promo - visible only on mobile */}
+              <div className="lg:hidden mb-20">
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-4 text-white shadow-md flex items-center justify-between"
+                   onClick={() => {
+                     setTripToEdit(null);
+                     setIsModalOpen(true);
+                   }}
+                >
+                  <div>
+                     <div className="font-bold mb-1">Chytré zadávání</div>
+                     <div className="text-xs text-blue-100">Klikněte pro AI asistenta</div>
+                  </div>
+                  <div className="bg-white/20 p-2 rounded-full">
+                    <Plus size={24} />
+                  </div>
+                </div>
+              </div>
+
             </div>
           </>
         )}
@@ -363,20 +421,56 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Floating Action Button for Mobile */}
-      {currentView === 'dashboard' && (
-        <div className="fixed bottom-6 right-6 md:hidden z-40">
+      {/* Mobile Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden pb-safe z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <div className="flex items-end justify-between px-2">
+          
           <button 
-            onClick={() => {
-              setTripToEdit(null);
-              setIsModalOpen(true);
-            }}
-            className="bg-blue-600 text-white p-4 rounded-full shadow-xl shadow-blue-400/50 hover:bg-blue-700 transition-transform active:scale-95"
+            onClick={() => setCurrentView('dashboard')}
+            className={`flex-1 py-3 flex flex-col items-center gap-1 ${currentView === 'dashboard' ? 'text-blue-600' : 'text-gray-400'}`}
           >
-            <Plus size={24} />
+            <Home size={22} strokeWidth={currentView === 'dashboard' ? 2.5 : 2} />
+            <span className="text-[10px] font-medium">Domů</span>
           </button>
+
+          <button 
+            onClick={() => setCurrentView('reports')}
+            className={`flex-1 py-3 flex flex-col items-center gap-1 ${currentView === 'reports' ? 'text-blue-600' : 'text-gray-400'}`}
+          >
+            <FileText size={22} strokeWidth={currentView === 'reports' ? 2.5 : 2} />
+            <span className="text-[10px] font-medium">Reporty</span>
+          </button>
+
+          <div className="relative -top-5">
+             <button 
+                onClick={() => {
+                  setTripToEdit(null);
+                  setIsModalOpen(true);
+                }}
+                className="bg-blue-600 text-white p-4 rounded-full shadow-lg shadow-blue-400/40 hover:scale-105 transition-transform border-4 border-[#f8f9fc]"
+             >
+                <Plus size={28} />
+             </button>
+          </div>
+
+          <button 
+            onClick={() => setCurrentView('settings')}
+            className={`flex-1 py-3 flex flex-col items-center gap-1 ${currentView === 'settings' ? 'text-blue-600' : 'text-gray-400'}`}
+          >
+            <SettingsIcon size={22} strokeWidth={currentView === 'settings' ? 2.5 : 2} />
+            <span className="text-[10px] font-medium">Nastavení</span>
+          </button>
+
+          <button 
+            onClick={() => setCurrentView('about')}
+            className={`flex-1 py-3 flex flex-col items-center gap-1 ${currentView === 'about' ? 'text-blue-600' : 'text-gray-400'}`}
+          >
+            <Info size={22} strokeWidth={currentView === 'about' ? 2.5 : 2} />
+            <span className="text-[10px] font-medium">O aplikaci</span>
+          </button>
+
         </div>
-      )}
+      </div>
 
       <NewTripModal 
         isOpen={isModalOpen} 
