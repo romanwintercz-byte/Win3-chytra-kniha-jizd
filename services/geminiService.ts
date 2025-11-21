@@ -1,13 +1,36 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AISuggestion } from "../types";
 
-export const parseTripFromText = async (text: string): Promise<AISuggestion> => {
-  if (!process.env.API_KEY) {
-    console.error("API Key is missing");
-    throw new Error("API Key not found");
+// Helper to securely retrieve API Key compatible with Vite and standard envs
+const getApiKey = (): string | undefined => {
+  // 1. Try Vite standard (import.meta.env) - most likely for Vercel/Vite
+  try {
+    // @ts-ignore - import.meta might not be typed depending on tsconfig
+    const metaEnv = import.meta.env;
+    if (metaEnv && metaEnv.VITE_API_KEY) {
+      return metaEnv.VITE_API_KEY;
+    }
+  } catch (e) {
+    // Ignore errors accessing import.meta
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // 2. Try standard process.env (Create React App, Next.js, or custom defines)
+  if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+    return process.env.API_KEY;
+  }
+  
+  return undefined;
+};
+
+export const parseTripFromText = async (text: string): Promise<AISuggestion> => {
+  const apiKey = getApiKey();
+
+  if (!apiKey) {
+    console.error("API Key is missing. Checked VITE_API_KEY and API_KEY.");
+    throw new Error("API Key not found. Please ensure VITE_API_KEY is set in Vercel Environment Variables.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   const today = new Date().toISOString().split('T')[0];
 
   try {
@@ -57,16 +80,18 @@ export const parseTripFromText = async (text: string): Promise<AISuggestion> => 
     return JSON.parse(jsonText) as AISuggestion;
   } catch (error) {
     console.error("Error parsing trip with Gemini:", error);
-    return {};
+    throw error; // Re-throw to show specific error in UI
   }
 };
 
 export const parseReceiptFromImage = async (base64Image: string, mimeType: string): Promise<AISuggestion> => {
-  if (!process.env.API_KEY) {
-    throw new Error("API Key not found");
+  const apiKey = getApiKey();
+
+  if (!apiKey) {
+    throw new Error("API Key not found. Please ensure VITE_API_KEY is set in Vercel Environment Variables.");
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey });
 
   try {
     const response = await ai.models.generateContent({
