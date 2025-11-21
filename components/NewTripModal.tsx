@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Sparkles, MapPin, Calendar, Navigation, Loader2, Car, User, Briefcase, Gauge, Fuel, Mic, MicOff, ArrowLeft, Save, Bookmark, AlertTriangle, Trash2, Check, Camera, Banknote } from 'lucide-react';
+import { X, Sparkles, MapPin, Calendar, Navigation, Loader2, Car, User, Briefcase, Gauge, Fuel, Mic, MicOff, ArrowLeft, Save, Bookmark, AlertTriangle, Trash2, Check, Camera, Banknote, Keyboard } from 'lucide-react';
 import { Trip, TripType, Vehicle, Driver, Order, TripTemplate } from '../types';
 import { parseTripFromText, parseReceiptFromImage } from '../services/geminiService';
 import { Haptics } from '../utils/haptics';
@@ -59,6 +59,9 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
   const [showTemplates, setShowTemplates] = useState(false);
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
   const [templateName, setTemplateName] = useState('');
+
+  // Simple iOS detection for the hint
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
   const getVehicleLastOdometer = (vId: string): number => {
     const vehicleTrips = existingTrips.filter(t => t.vehicleId === vId && t.id !== tripToEdit?.id);
@@ -499,7 +502,7 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
                   <div className="relative">
                     <textarea
                       className="w-full border border-gray-200 rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-gray-700 pr-12 text-base shadow-sm"
-                      rows={8}
+                      rows={6}
                       placeholder="Klikněte na mikrofon a diktujte: 'Včera cesta Brno Praha, 205km, služebně...'"
                       value={aiInput}
                       onChange={(e) => setAiInput(e.target.value)}
@@ -519,6 +522,22 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
                     <p className="text-xs text-red-500 mt-2 font-medium animate-pulse ml-1">Poslouchám...</p>
                   )}
                 </div>
+
+                {/* iOS Tip - Only visible on Apple devices */}
+                {isIOS && (
+                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 flex items-start gap-3 animate-fade-in">
+                    <div className="bg-blue-100 p-1.5 rounded-lg text-blue-600 shrink-0 mt-0.5">
+                       <Keyboard size={16} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-blue-800 mb-0.5">Tip pro iPhone/iPad</p>
+                      <p className="text-xs text-blue-600 leading-relaxed">
+                        Pro nejlepší výsledek klikněte do textového pole a použijte <span className="font-bold">mikrofon na klávesnici</span> (vpravo dole). Webový mikrofon na Apple zařízeních často zlobí.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <button
                   onClick={handleAiParse}
                   disabled={isProcessing || !aiInput.trim()}
