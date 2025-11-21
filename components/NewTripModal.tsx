@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Sparkles, MapPin, Calendar, Navigation, Loader2, Car, User, Briefcase, Gauge, Fuel, Mic, MicOff, ArrowLeft, Save, Star, Bookmark, AlertTriangle, Trash2, Check, Camera, Banknote } from 'lucide-react';
+import { X, Sparkles, MapPin, Calendar, Navigation, Loader2, Car, User, Briefcase, Gauge, Fuel, Mic, MicOff, ArrowLeft, Save, Bookmark, AlertTriangle, Trash2, Check, Camera, Banknote } from 'lucide-react';
 import { Trip, TripType, Vehicle, Driver, Order, TripTemplate } from '../types';
 import { parseTripFromText, parseReceiptFromImage } from '../services/geminiService';
 import { Haptics } from '../utils/haptics';
@@ -56,7 +56,6 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
   const [vehicleId, setVehicleId] = useState('');
   const [driverId, setDriverId] = useState('');
 
-  // Template state
   const [showTemplates, setShowTemplates] = useState(false);
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
   const [templateName, setTemplateName] = useState('');
@@ -103,7 +102,6 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
         setFuelPrice('');
         setType(TripType.BUSINESS);
         
-        // Logic to preload last used values or defaults
         const activeVehicles = vehicles.filter(v => v.isActive);
         const activeDrivers = drivers.filter(d => d.isActive);
         const activeOrders = orders.filter(o => o.isActive);
@@ -112,7 +110,6 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
         const lastDriver = localStorage.getItem('win3_last_driver');
         const lastOrder = localStorage.getItem('win3_last_order');
 
-        // Check if last values are still valid (exist in active lists)
         const isValidVehicle = lastVehicle && activeVehicles.some(v => v.id === lastVehicle);
         const isValidDriver = lastDriver && activeDrivers.some(d => d.id === lastDriver);
         const isValidOrder = lastOrder && activeOrders.some(o => o.id === lastOrder);
@@ -149,8 +146,6 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
   useEffect(() => {
     if (isOpen && !tripToEdit && vehicleId) {
       const lastOdo = getVehicleLastOdometer(vehicleId);
-      // Only auto-update start odometer if it hasn't been manually touched to something else
-      // For simplicity, we just update it if the user switches vehicles, but let them edit it.
       setStartOdometer(lastOdo);
       if (endOdometer < lastOdo) {
         setEndOdometer(lastOdo);
@@ -267,9 +262,11 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
       
       setMode('manual');
       Haptics.success();
-    } catch (e) {
+    } catch (e: any) {
       Haptics.error();
-      alert('Nepodařilo se zpracovat text.');
+      console.error("AI Processing Error:", e);
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      alert(`Chyba při zpracování: ${errorMsg}`);
     } finally {
       setIsProcessing(false);
     }
@@ -310,10 +307,11 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
         if (result.fuelPrice) setFuelPrice(result.fuelPrice.toString());
         
         Haptics.success();
-      } catch (error) {
-        console.error(error);
+      } catch (error: any) {
+        console.error("Receipt scan error:", error);
         Haptics.error();
-        alert("Nepodařilo se načíst data z účtenky.");
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        alert(`Nepodařilo se načíst data z účtenky: ${errorMsg}`);
       } finally {
         setIsScanningReceipt(false);
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -321,7 +319,6 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
     };
     reader.readAsDataURL(file);
   };
-
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -347,7 +344,6 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
       driverId
     };
 
-    // Save template if requested
     if (saveAsTemplate && templateName && onAddTemplate) {
       onAddTemplate({
         name: templateName,
@@ -360,7 +356,6 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
       });
     }
 
-    // Save user preferences for next time
     localStorage.setItem('win3_last_vehicle', vehicleId);
     localStorage.setItem('win3_last_driver', driverId);
     localStorage.setItem('win3_last_order', orderId);
@@ -391,13 +386,10 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center bg-black/50 md:backdrop-blur-sm md:p-4">
-      {/* Mobile: Full Screen slide up, Desktop: Modal Card */}
       <div className="bg-white w-full h-[100dvh] md:h-auto md:max-h-[90vh] md:max-w-lg md:rounded-2xl shadow-2xl overflow-hidden animate-fade-in flex flex-col">
         
-        {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white z-10 flex-shrink-0 pt-safe">
           <div className="flex items-center gap-2">
-            {/* On mobile, use an arrow back icon for "Close/Back" feeling */}
             <button onClick={onClose} className="md:hidden text-gray-800 p-2 -ml-2 rounded-full hover:bg-gray-100 active:bg-gray-200">
               <ArrowLeft size={24} />
             </button>
@@ -410,7 +402,6 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
           </button>
         </div>
 
-        {/* Scrollable Content */}
         <div className="flex-grow overflow-y-auto custom-scrollbar bg-gray-50/50">
           {!tripToEdit && (
             <div className="sticky top-0 z-20 bg-white px-4 py-3 border-b border-gray-100 flex gap-2">
@@ -436,7 +427,6 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
                 </button>
               </div>
               
-              {/* Scan Receipt Button */}
               <input 
                 type="file" 
                 accept="image/*" 
@@ -454,7 +444,6 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
                  {isScanningReceipt ? <Loader2 size={20} className="animate-spin text-blue-600" /> : <Camera size={20} />}
               </button>
 
-              {/* Templates Button */}
               {mode === 'manual' && (
                  <button 
                   onClick={() => {
@@ -470,7 +459,6 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
           )}
 
           <div className="p-4 pb-32 md:pb-6 space-y-6">
-            {/* Templates Dropdown/List */}
             {showTemplates && mode === 'manual' && (
                <div className="bg-white p-4 rounded-2xl shadow-lg border border-amber-100 space-y-3 animate-fade-in">
                  <h3 className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-2">Oblíbené trasy</h3>
@@ -543,7 +531,6 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
                 
-                {/* Primary Info Card */}
                 <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Datum</label>
@@ -601,7 +588,6 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
                   </div>
                 </div>
 
-                {/* Route Card */}
                 <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Start (Odkud)</label>
@@ -633,7 +619,6 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
                   </div>
                 </div>
 
-                {/* Stats Card */}
                 <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -664,7 +649,6 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Odometer Gap Warning */}
                   {odometerGap && (
                      <div className="mt-3 bg-red-50 border border-red-100 rounded-lg p-3 flex items-start gap-2 animate-fade-in">
                         <AlertTriangle size={16} className="text-red-600 flex-shrink-0 mt-0.5" />
@@ -691,7 +675,6 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
                   </div>
                 </div>
 
-                {/* Details Card */}
                 <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-4">
                    <div>
                     <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">Zakázka</label>
@@ -779,7 +762,6 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Save as Template Checkbox */}
                   {!tripToEdit && onAddTemplate && (
                     <div className="pt-2 border-t border-gray-100">
                        <label className="flex items-center gap-3 cursor-pointer">
@@ -811,7 +793,6 @@ export const NewTripModal: React.FC<NewTripModalProps> = ({
                   )}
                 </div>
 
-                {/* Fixed Save Button for Mobile - Sticky at bottom */}
                 <div className="md:relative fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 md:border-0 md:bg-transparent md:p-0 pb-safe z-20">
                   <button
                     type="submit"
