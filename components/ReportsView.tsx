@@ -108,23 +108,59 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ trips, vehicles, drive
       <html lang="cs">
         <head>
           <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
           <title>Tisk Reportu - Kniha Jízd</title>
           <script src="https://cdn.tailwindcss.com"></script>
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
           <style>
-            body { font-family: ui-sans-serif, system-ui, sans-serif; padding: 40px; background: white; }
+            body { font-family: 'Inter', sans-serif; background: white; }
+            
+            /* Hide scrollbar for cleaner look on mobile */
+            ::-webkit-scrollbar { width: 0px; background: transparent; }
+            
             @media print {
-              @page { margin: 1cm; }
-              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 0; }
+              @page { margin: 1cm; size: auto; }
+              .no-print { display: none !important; }
+              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 0 !important; }
+              .content-wrapper { padding: 0 !important; margin: 0 !important; }
             }
           </style>
         </head>
-        <body>
-          ${printContent.innerHTML}
+        <body class="bg-gray-100">
+          
+          <!-- Navigation Bar (Hidden in Print) -->
+          <div class="no-print fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center justify-between z-50 shadow-sm safe-area-top">
+            <h2 class="font-bold text-gray-900 text-sm md:text-base">Náhled tisku</h2>
+            <div class="flex gap-2">
+               <button onclick="window.print()" class="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-xl text-sm font-bold shadow-sm hover:bg-gray-800 transition-colors active:scale-95">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+                 Tisk / PDF
+               </button>
+               <button onclick="window.close()" class="p-2 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition-colors active:scale-95">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+               </button>
+            </div>
+          </div>
+
+          <!-- Content Wrapper -->
+          <div class="content-wrapper p-4 pt-20 md:p-10 md:pt-24 min-h-screen flex justify-center">
+             <div class="bg-white shadow-xl rounded-none md:rounded-xl w-full max-w-4xl p-8 md:p-12">
+                ${printContent.innerHTML}
+             </div>
+          </div>
+
           <script>
             window.onload = function() {
+              // Small delay to ensure rendering
               setTimeout(function() {
-                window.print();
-              }, 800);
+                try {
+                    // On mobile, we prefer the user to click the button, 
+                    // but on desktop we can auto-trigger
+                    if(window.innerWidth > 768) {
+                        window.print();
+                    }
+                } catch(e) {}
+              }, 500);
             }
           </script>
         </body>
