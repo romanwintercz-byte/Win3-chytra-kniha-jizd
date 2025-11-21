@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Trip, TripType, Vehicle, Driver, Order } from '../types';
-import { Car, Trash2, Calendar, Fuel, Droplet, Pencil, MapPin, Navigation, ArrowRight } from 'lucide-react';
+import { Car, Trash2, Calendar, Fuel, Droplet, Pencil, MapPin, Navigation, Briefcase, ChevronRight, Lock } from 'lucide-react';
 
 interface TripListProps {
   trips: Trip[];
@@ -9,11 +9,15 @@ interface TripListProps {
   orders: Order[];
   onDelete: (id: string) => void;
   onEdit: (trip: Trip) => void;
+  closureDate?: string;
 }
 
-export const TripList: React.FC<TripListProps> = ({ trips, vehicles, drivers, orders, onDelete, onEdit }) => {
-  const getVehicleName = (id: string) => vehicles.find(v => v.id === id)?.name || '---';
-  const getVehiclePlate = (id: string) => vehicles.find(v => v.id === id)?.licensePlate || '';
+export const TripList: React.FC<TripListProps> = ({ trips, vehicles, drivers, orders, onDelete, onEdit, closureDate }) => {
+  const getVehicleName = (id: string) => {
+    const v = vehicles.find(v => v.id === id);
+    return v ? `${v.name} (${v.licensePlate})` : '---';
+  };
+  
   const getDriverName = (id: string) => drivers.find(d => d.id === id)?.name || '---';
   
   const getOrderInfo = (id: string) => {
@@ -21,7 +25,11 @@ export const TripList: React.FC<TripListProps> = ({ trips, vehicles, drivers, or
     return order ? { name: order.name, code: order.code } : { name: 'Neurčeno', code: '' };
   };
 
-  // Group trips by Month Year
+  const isTripLocked = (date: string) => {
+    if (!closureDate) return false;
+    return date <= closureDate;
+  };
+
   const groupedTrips = useMemo(() => {
     const sorted = [...trips].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
@@ -43,55 +51,36 @@ export const TripList: React.FC<TripListProps> = ({ trips, vehicles, drivers, or
 
   if (trips.length === 0) {
     return (
-      <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
-        <div className="mx-auto h-12 w-12 text-gray-400 mb-3">
-          <Car className="w-full h-full" />
+      <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300 mx-auto">
+        <div className="mx-auto h-12 w-12 text-gray-400 mb-3 flex items-center justify-center bg-gray-50 rounded-full">
+          <Car className="w-6 h-6" />
         </div>
         <h3 className="text-lg font-medium text-gray-900">Žádné jízdy</h3>
-        <p className="mt-1 text-sm text-gray-500">Začněte přidáním nové jízdy do knihy.</p>
+        <p className="mt-1 text-sm text-gray-500">Začněte přidáním nové jízdy.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8 pb-4">
       {(Object.entries(groupedTrips) as [string, Trip[]][]).map(([month, monthTrips]) => {
-        // Calculate monthly stats
         const totalKm = monthTrips.reduce((acc, t) => acc + t.distanceKm, 0);
         const totalFuel = monthTrips.reduce((acc, t) => acc + (t.fuelLiters || 0), 0);
-        const avgConsumption = totalKm > 0 && totalFuel > 0 
-          ? ((totalFuel / totalKm) * 100).toFixed(1) 
-          : null;
 
         return (
           <div key={month} className="animate-fade-in">
-            {/* Monthly Header with Stats */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 pl-1 gap-2">
-               <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+            {/* Month Header */}
+            <div className="flex items-center justify-between mb-3 px-1">
+               <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
                 <Calendar size={14} />
                 {month}
               </h3>
-              
-              <div className="flex items-center gap-4 text-xs font-medium">
-                <div className="bg-gray-100 px-2 py-1 rounded-md text-gray-600">
-                  Celkem: {totalKm.toLocaleString()} km
-                </div>
-                {totalFuel > 0 && (
-                   <div className="bg-orange-50 px-2 py-1 rounded-md text-orange-700 flex items-center gap-1">
-                     <Fuel size={10} />
-                     {totalFuel.toLocaleString()} l
-                   </div>
-                )}
-                {avgConsumption && (
-                  <div className="bg-green-50 px-2 py-1 rounded-md text-green-700 flex items-center gap-1 border border-green-100">
-                    <Droplet size={10} />
-                    {avgConsumption} l/100km
-                  </div>
-                )}
+              <div className="bg-gray-100 px-2 py-1 rounded-full text-xs font-medium text-gray-700">
+                {totalKm.toLocaleString()} km
               </div>
             </div>
             
-            {/* DESKTOP TABLE VIEW */}
+            {/* Desktop Table View */}
             <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -114,9 +103,10 @@ export const TripList: React.FC<TripListProps> = ({ trips, vehicles, drivers, or
                       const day = dateObj.getDate();
                       const dayName = dateObj.toLocaleDateString('cs-CZ', { weekday: 'short' });
                       const orderInfo = getOrderInfo(trip.orderId);
+                      const locked = isTripLocked(trip.date);
 
                       return (
-                        <tr key={trip.id} className="hover:bg-blue-50/30 transition-colors group">
+                        <tr key={trip.id} className={`hover:bg-blue-50/30 transition-colors group ${locked ? 'opacity-80 bg-gray-50/30' : 'cursor-pointer'}`} onClick={() => !locked && onEdit(trip)}>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                             <div className="font-medium">{day}.</div>
                             <div className="text-xs text-gray-500">{dayName}</div>
@@ -152,35 +142,41 @@ export const TripList: React.FC<TripListProps> = ({ trips, vehicles, drivers, or
                                <span className="text-gray-300">-</span>
                              )}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm hidden lg:table-cell">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 hidden lg:table-cell">
                              <div className="flex flex-col">
-                               <span className="text-gray-900 font-bold">{getDriverName(trip.driverId)}</span>
-                               <span className="text-xs text-gray-600 font-medium mt-0.5">{getVehicleName(trip.vehicleId)} ({getVehiclePlate(trip.vehicleId)})</span>
+                               <span className="text-gray-900">{getDriverName(trip.driverId)}</span>
+                               <span className="text-[10px] text-gray-400">{getVehicleName(trip.vehicleId)}</span>
                              </div>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onEdit(trip);
-                                }}
-                                className="text-gray-400 hover:text-blue-600 transition-colors p-1"
-                                title="Upravit"
-                              >
-                                <Pencil size={16} />
-                              </button>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onDelete(trip.id);
-                                }}
-                                className="text-gray-400 hover:text-red-600 transition-colors p-1"
-                                title="Smazat"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
+                            {locked ? (
+                               <div className="flex items-center justify-end p-1 text-gray-300">
+                                 <Lock size={16} />
+                               </div>
+                            ) : (
+                              <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEdit(trip);
+                                  }}
+                                  className="text-gray-400 hover:text-blue-600 transition-colors p-1"
+                                  title="Upravit"
+                                >
+                                  <Pencil size={16} />
+                                </button>
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDelete(trip.id);
+                                  }}
+                                  className="text-gray-400 hover:text-red-600 transition-colors p-1"
+                                  title="Smazat"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       );
@@ -190,73 +186,61 @@ export const TripList: React.FC<TripListProps> = ({ trips, vehicles, drivers, or
               </div>
             </div>
 
-            {/* MOBILE CARD VIEW */}
+            {/* Mobile Card View - Optimized for touch and native feel */}
             <div className="md:hidden space-y-3">
               {monthTrips.map((trip) => {
-                const dateObj = new Date(trip.date);
-                const day = dateObj.getDate();
-                const monthName = dateObj.toLocaleDateString('cs-CZ', { month: 'short' }).toUpperCase();
-                const orderInfo = getOrderInfo(trip.orderId);
-                
-                return (
-                  <div 
-                    key={trip.id}
-                    onClick={() => onEdit(trip)}
-                    className={`bg-white rounded-xl shadow-sm border-l-4 p-4 relative active:scale-[0.99] transition-transform ${trip.type === TripType.BUSINESS ? 'border-l-blue-500' : 'border-l-purple-500'}`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex gap-3">
-                        {/* Date Box */}
-                        <div className="flex flex-col items-center justify-center bg-gray-50 rounded-lg w-12 h-12 shrink-0 border border-gray-100">
-                           <span className="text-xl font-bold text-gray-900 leading-none">{day}</span>
-                           <span className="text-[10px] font-bold text-gray-500 mt-0.5">{monthName}</span>
-                        </div>
+                 const dateObj = new Date(trip.date);
+                 const orderInfo = getOrderInfo(trip.orderId);
+                 const isBusiness = trip.type === TripType.BUSINESS;
+                 const locked = isTripLocked(trip.date);
 
-                        <div className="flex flex-col">
-                          {/* Route */}
-                          <div className="flex flex-wrap items-center gap-1 text-sm font-bold text-gray-900 mb-1">
-                            <span className="line-clamp-1">{trip.origin}</span>
-                            <ArrowRight size={12} className="text-gray-400 shrink-0" />
-                            <span className="line-clamp-1">{trip.destination}</span>
-                          </div>
-                          
-                          {/* Details */}
-                          <div className="text-xs text-gray-500 flex flex-col gap-1">
-                            <div className="flex items-center gap-1.5">
-                               <Car size={12} className="shrink-0" />
-                               <span className="truncate max-w-[120px]">{getVehicleName(trip.vehicleId)}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 font-medium text-gray-700">
-                               <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${trip.type === TripType.BUSINESS ? 'bg-blue-500' : 'bg-purple-500'}`}></span>
-                               <span className="truncate max-w-[150px]">{orderInfo.name}</span>
-                            </div>
-                          </div>
+                 return (
+                   <div 
+                    key={trip.id} 
+                    onClick={() => !locked && onEdit(trip)}
+                    className={`bg-white p-4 rounded-2xl shadow-sm border border-gray-100 transition-transform touch-manipulation ${locked ? 'opacity-75' : 'active:scale-[0.98]'}`}
+                   >
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex gap-3">
+                           <div className="flex flex-col items-center justify-center bg-gray-50 rounded-xl w-12 h-12 border border-gray-100 flex-shrink-0">
+                              <span className="text-sm font-bold text-gray-900">{dateObj.getDate()}.</span>
+                              <span className="text-[10px] uppercase text-gray-400 font-medium">{dateObj.toLocaleDateString('cs-CZ', { weekday: 'short' })}</span>
+                           </div>
+                           
+                           <div>
+                              <div className="text-sm font-bold text-gray-900 line-clamp-1">{trip.destination}</div>
+                              <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
+                                <span className={`w-1.5 h-1.5 rounded-full ${isBusiness ? 'bg-blue-500' : 'bg-purple-500'}`}></span>
+                                <span className="truncate max-w-[120px]">{orderInfo.name}</span>
+                              </div>
+                           </div>
+                        </div>
+                        
+                        <div className="text-right flex-shrink-0">
+                           <div className="text-lg font-black text-gray-900 tracking-tight">+{trip.distanceKm} <span className="text-xs font-normal text-gray-500">km</span></div>
                         </div>
                       </div>
                       
-                      {/* Right Side stats */}
-                      <div className="flex flex-col items-end gap-2">
-                         <span className="text-lg font-bold text-gray-900 whitespace-nowrap">
-                           {trip.distanceKm} <span className="text-xs font-normal text-gray-500">km</span>
-                         </span>
-                         {trip.fuelLiters && (
-                            <span className="bg-orange-50 text-orange-700 text-[10px] px-1.5 py-0.5 rounded font-bold flex items-center gap-1">
-                              <Fuel size={10} /> {trip.fuelLiters}l
-                            </span>
-                         )}
-                         <button 
-                            onClick={(e) => { e.stopPropagation(); onDelete(trip.id); }}
-                            className="p-2 -mr-2 text-gray-300 hover:text-red-500 transition-colors"
-                         >
-                            <Trash2 size={16} />
-                         </button>
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-50 mt-2">
+                        <div className="flex items-center gap-2 text-xs text-gray-400 overflow-hidden">
+                           <Car size={12} className="flex-shrink-0" />
+                           <span className="truncate max-w-[150px]">{getVehicleName(trip.vehicleId)}</span>
+                           {trip.fuelLiters && (
+                             <span className="flex items-center gap-1 text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded font-medium flex-shrink-0">
+                               <Fuel size={10} /> {trip.fuelLiters}l
+                             </span>
+                           )}
+                        </div>
+                        {locked ? (
+                          <Lock size={16} className="text-gray-300 flex-shrink-0" />
+                        ) : (
+                          <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
+                        )}
                       </div>
-                    </div>
-                  </div>
-                );
+                   </div>
+                 );
               })}
             </div>
-
           </div>
         );
       })}

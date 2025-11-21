@@ -1,44 +1,13 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AISuggestion } from "../types";
 
-// Helper to safely retrieve API key from various environment configurations
-const getApiKey = (): string => {
-  // 1. Try standard process.env (Node/Webpack/CRA/Next.js)
-  try {
-    if (typeof process !== 'undefined' && process.env?.API_KEY) {
-      return process.env.API_KEY;
-    }
-  } catch (e) {}
-
-  // 2. Try Vite environment variables (Standard for Vercel + Vite deployments)
-  // Vercel requires 'VITE_' prefix for variables to be exposed to the browser
-  try {
-    // @ts-ignore
-    if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_KEY) {
-      // @ts-ignore
-      return import.meta.env.VITE_API_KEY;
-    }
-  } catch (e) {}
-
-  // 3. Try React App prefix (Standard for CRA)
-  try {
-    if (typeof process !== 'undefined' && process.env?.REACT_APP_API_KEY) {
-      return process.env.REACT_APP_API_KEY;
-    }
-  } catch (e) {}
-
-  return '';
-};
-
 export const parseTripFromText = async (text: string): Promise<AISuggestion> => {
-  const apiKey = getApiKey();
-
-  if (!apiKey) {
-    console.error("API Key is missing. Checked process.env.API_KEY, VITE_API_KEY, and REACT_APP_API_KEY.");
+  if (!process.env.API_KEY) {
+    console.error("API Key is missing");
     throw new Error("API Key not found");
   }
 
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const today = new Date().toISOString().split('T')[0];
 
   try {
@@ -88,6 +57,53 @@ export const parseTripFromText = async (text: string): Promise<AISuggestion> => 
     return JSON.parse(jsonText) as AISuggestion;
   } catch (error) {
     console.error("Error parsing trip with Gemini:", error);
-    throw error; // Re-throw to be caught by the UI
+    return {};
+  }
+};
+
+export const parseReceiptFromImage = async (base64Image: string, mimeType: string): Promise<AISuggestion> => {
+  if (!process.env.API_KEY) {
+    throw new Error("API Key not found");
+  }
+
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: {
+        parts: [
+          {
+            inlineData: {
+              mimeType: mimeType,
+              data: base64Image
+            }
+          },
+          {
+            text: "Analyzuj tuto účtenku za tankování. Extrahuj datum, celkové množství paliva (litry) a celkovou zaplacenou částku. Pokud datum chybí, použij dnešní."
+          }
+        ]
+      },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            date: { type: Type.STRING, description: "Datum ve formátu YYYY-MM-DD" },
+            fuelLiters: { type: Type.NUMBER, description: "Objem paliva v litrech" },
+            fuelPrice: { type: Type.NUMBER, description: "Celková cena za tankování v CZK" }
+          },
+          required: ["fuelLiters", "fuelPrice"]
+        }
+      }
+    });
+
+    const jsonText = response.text;
+    if (!jsonText) return {};
+
+    return JSON.parse(jsonText) as AISuggestion;
+  } catch (error) {
+    console.error("Error scanning receipt:", error);
+    throw error;
   }
 };

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Download, Upload, Database, UserCog, FileJson, AlertTriangle, CheckCircle2, Calendar, Mail } from 'lucide-react';
+import { Download, Upload, Database, UserCog, FileJson, AlertTriangle, CheckCircle2, Calendar, Mail, ArrowRight } from 'lucide-react';
 import { Trip, Vehicle, Driver, Order, AppDataExport } from '../types';
 
 interface DataManagementProps {
@@ -15,12 +15,10 @@ export const DataManagement: React.FC<DataManagementProps> = ({
 }) => {
   const [driverId, setDriverId] = useState<string>('');
   const [exportMonth, setExportMonth] = useState<string>(new Date().toISOString().slice(0, 7));
-  const [accountantEmail, setAccountantEmail] = useState<string>('Aneta.kralova@kabelusti.cz');
   const [importStatus, setImportStatus] = useState<{type: 'success' | 'error', message: string} | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // --- Export Logic ---
+  const ACCOUNTANT_EMAIL = 'Aneta.Kralova@kabelusti.cz';
 
   const downloadJSON = (data: AppDataExport, filename: string) => {
     const jsonString = JSON.stringify(data, null, 2);
@@ -36,20 +34,28 @@ export const DataManagement: React.FC<DataManagementProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  const getExportPayload = () => {
+  const handleFullBackup = () => {
+    const exportData: AppDataExport = {
+      version: 1,
+      type: 'full_backup',
+      exportDate: new Date().toISOString(),
+      data: { trips, vehicles, drivers, orders }
+    };
+    downloadJSON(exportData, `zaloha_kniha_jizd_${new Date().toISOString().slice(0, 10)}.json`);
+  };
+
+  const handleDriverExport = () => {
     if (!driverId) {
       alert('Vyberte řidiče');
-      return null;
+      return;
     }
 
-    // Filter trips
     const filteredTrips = trips.filter(t => {
       const matchesDriver = t.driverId === driverId;
-      const matchesMonth = exportMonth ? t.date.startsWith(exportMonth) : true; // If no month, all trips
+      const matchesMonth = exportMonth ? t.date.startsWith(exportMonth) : true;
       return matchesDriver && matchesMonth;
     });
 
-    // Find related resources to include (so we don't break links on import)
     const usedVehicleIds = new Set(filteredTrips.map(t => t.vehicleId));
     const usedOrderIds = new Set(filteredTrips.map(t => t.orderId));
     
@@ -59,7 +65,6 @@ export const DataManagement: React.FC<DataManagementProps> = ({
 
     const driverName = relatedDriver[0]?.name || 'ridic';
     const safeDriverName = driverName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    const filename = `export_${safeDriverName}_${exportMonth}.json`;
 
     const exportData: AppDataExport = {
       version: 1,
@@ -74,61 +79,8 @@ export const DataManagement: React.FC<DataManagementProps> = ({
       }
     };
 
-    return { exportData, filename, driverName };
+    downloadJSON(exportData, `export_${safeDriverName}_${exportMonth}.json`);
   };
-
-  const handleDriverExport = () => {
-    const payload = getExportPayload();
-    if (payload) {
-      downloadJSON(payload.exportData, payload.filename);
-    }
-  };
-
-  const handleFullBackup = () => {
-    const exportData: AppDataExport = {
-      version: 1,
-      type: 'full_backup',
-      exportDate: new Date().toISOString(),
-      data: {
-        trips,
-        vehicles,
-        drivers,
-        orders
-      }
-    };
-    
-    const dateStr = new Date().toISOString().split('T')[0];
-    downloadJSON(exportData, `kniha_jizd_backup_${dateStr}.json`);
-  };
-
-  const handleEmailExport = () => {
-    const payload = getExportPayload();
-    if (!payload) return;
-
-    if (!accountantEmail) {
-      alert("Vyplňte email účetní.");
-      return;
-    }
-
-    // 1. Download the file first
-    downloadJSON(payload.exportData, payload.filename);
-
-    // 2. Construct Mailto link
-    const subject = `Výkaz jízd - ${payload.driverName} - ${exportMonth}`;
-    const body = `Dobrý den,\n\nv příloze zasílám export dat pro knihu jízd.\n\nSoubor: ${payload.filename}\n\nS pozdravem,\n${payload.driverName}`;
-    
-    const mailtoLink = `mailto:${accountantEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-    // 3. Open mail client and instruct user
-    window.location.href = mailtoLink;
-
-    // 4. Show instruction using alert (timeout ensures it appears after the mail client triggers)
-    setTimeout(() => {
-      alert(`Krok 1: Soubor '${payload.filename}' byl stažen do vašeho počítače.\n\nKrok 2: Otevřel se váš emailový klient.\n\nKrok 3: PŘETÁHNĚTE stažený soubor do přílohy emailu a odešlete.`);
-    }, 500);
-  };
-
-  // --- Import Logic ---
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -139,14 +91,12 @@ export const DataManagement: React.FC<DataManagementProps> = ({
       try {
         const json = JSON.parse(event.target?.result as string) as AppDataExport;
         
-        // Basic validation
         if (!json.version || !json.data) {
           throw new Error('Neplatný formát souboru');
         }
 
         onImportData(json);
         
-        // Reset input
         if (fileInputRef.current) fileInputRef.current.value = '';
       } catch (err) {
         setImportStatus({ type: 'error', message: 'Chyba při čtení souboru. Je to platný JSON?' });
@@ -154,6 +104,16 @@ export const DataManagement: React.FC<DataManagementProps> = ({
       }
     };
     reader.readAsText(file);
+  };
+
+  const getMailtoLink = () => {
+    if (!driverId) return '#';
+    const driver = drivers.find(d => d.id === driverId);
+    const driverName = driver ? driver.name : 'Neznámý řidič';
+    const subject = encodeURIComponent(`Export dat - Kniha jízd - ${driverName} - ${exportMonth}`);
+    const body = encodeURIComponent(`Dobrý den,\n\nv příloze zasílám export knihy jízd za období ${exportMonth}.\n\nS pozdravem,\n${driverName}`);
+    
+    return `mailto:${ACCOUNTANT_EMAIL}?subject=${subject}&body=${body}`;
   };
 
   return (
@@ -171,10 +131,8 @@ export const DataManagement: React.FC<DataManagementProps> = ({
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
-        {/* Left Column: Export Options */}
         <div className="space-y-6">
           
-          {/* Driver Export Card */}
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
@@ -182,7 +140,7 @@ export const DataManagement: React.FC<DataManagementProps> = ({
               </div>
               <div>
                 <h3 className="text-lg font-bold text-gray-900">Export pro účetní</h3>
-                <p className="text-sm text-gray-500">Stáhnout jízdy řidiče a odeslat.</p>
+                <p className="text-sm text-gray-500">Stáhnout data řidiče a odeslat emailem.</p>
               </div>
             </div>
 
@@ -214,37 +172,46 @@ export const DataManagement: React.FC<DataManagementProps> = ({
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-gray-500 uppercase mb-1">Email účetní</label>
-                <input 
-                    type="email"
-                    value={accountantEmail}
-                    onChange={(e) => setAccountantEmail(e.target.value)}
-                    placeholder="email@firma.cz"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+              <div className="pt-2 space-y-3">
+                {/* Step 1 */}
+                <div className="relative">
+                  <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-black text-white rounded-full flex items-center justify-center text-xs font-bold z-10 border-2 border-white">1</div>
+                  <button 
+                    onClick={handleDriverExport}
+                    disabled={!driverId}
+                    className="w-full bg-gray-100 text-gray-900 py-3 rounded-lg font-bold hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <Download size={18} />
+                    Stáhnout soubor
+                  </button>
+                </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                <button 
-                  onClick={handleDriverExport}
-                  className="w-full bg-white border border-gray-300 text-gray-700 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm"
-                >
-                  <Download size={16} />
-                  Jen stáhnout
-                </button>
-                <button 
-                  onClick={handleEmailExport}
-                  className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-sm"
-                >
-                  <Mail size={16} />
-                  Připravit email
-                </button>
+                <div className="flex justify-center">
+                  <ArrowRight className="text-gray-300 rotate-90" size={20} />
+                </div>
+
+                {/* Step 2 */}
+                <div className="relative">
+                  <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold z-10 border-2 border-white">2</div>
+                  <a 
+                    href={getMailtoLink()}
+                    className={`block w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-center decoration-0 ${!driverId ? 'opacity-50 pointer-events-none' : ''}`}
+                  >
+                    <Mail size={18} />
+                    Odeslat paní Králové
+                  </a>
+                </div>
+                
+                <p className="text-[11px] text-center text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-100 flex items-start justify-center gap-1.5">
+                  <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Důležité:</strong> Stažený soubor musíte do otevřeného emailu přiložit ručně jako přílohu!
+                  </span>
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Full Backup Card */}
           <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-gray-200 text-gray-700 rounded-lg">
@@ -266,7 +233,6 @@ export const DataManagement: React.FC<DataManagementProps> = ({
 
         </div>
 
-        {/* Right Column: Import Options */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Car, Users, Archive, Plus, UserPlus, Briefcase, RefreshCw, Pencil } from 'lucide-react';
 import { Vehicle, Driver, Order } from '../types';
+import { Haptics } from '../utils/haptics';
 
 interface ResourceManagerProps {
   vehicles: Vehicle[];
@@ -25,22 +26,16 @@ export const ResourceManager: React.FC<ResourceManagerProps> = ({
   onAddDriver, onUpdateDriver, onToggleDriverArchive,
   onAddOrder, onUpdateOrder, onToggleOrderArchive
 }) => {
-  // --- Tabs State ---
   const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
 
-  // --- Edit States ---
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
 
-  // --- Input States for New Items (when not editing) ---
   const [newVehicle, setNewVehicle] = useState({ name: '', licensePlate: '' });
   const [newDriver, setNewDriver] = useState({ name: '' });
   const [newOrder, setNewOrder] = useState({ name: '', code: '' });
 
-  // --- Handlers ---
-
-  // Vehicle Handlers
   const handleVehicleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingVehicle) {
@@ -52,7 +47,6 @@ export const ResourceManager: React.FC<ResourceManagerProps> = ({
     }
   };
 
-  // Driver Handlers
   const handleDriverSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingDriver) {
@@ -66,13 +60,12 @@ export const ResourceManager: React.FC<ResourceManagerProps> = ({
     }
   };
 
-  // Order Handlers
   const handleOrderSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingOrder) {
       onUpdateOrder(editingOrder.id, { name: editingOrder.name, code: editingOrder.code });
       setEditingOrder(null);
-    } else if (newOrder.name) {
+    } else if (newOrder.name && newOrder.code) {
       onAddOrder(newOrder);
       setNewOrder({ name: '', code: '' });
     }
@@ -81,17 +74,22 @@ export const ResourceManager: React.FC<ResourceManagerProps> = ({
   return (
     <div className="space-y-6 animate-fade-in">
       
-      {/* Tabs */}
       <div className="flex justify-center">
         <div className="bg-gray-100 p-1 rounded-lg flex">
           <button
-            onClick={() => setActiveTab('active')}
+            onClick={() => {
+              Haptics.light();
+              setActiveTab('active');
+            }}
             className={`px-6 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'active' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Aktivní zdroje
           </button>
           <button
-            onClick={() => setActiveTab('archived')}
+            onClick={() => {
+              Haptics.light();
+              setActiveTab('archived');
+            }}
             className={`px-6 py-2 text-sm font-medium rounded-md transition-all flex items-center gap-2 ${activeTab === 'archived' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
           >
             <Archive size={14} />
@@ -102,7 +100,6 @@ export const ResourceManager: React.FC<ResourceManagerProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
         
-        {/* Orders Section */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col h-full">
           <div className="flex items-center gap-2 mb-6">
             <div className="p-2 bg-green-50 text-green-600 rounded-lg">
@@ -117,15 +114,16 @@ export const ResourceManager: React.FC<ResourceManagerProps> = ({
               <div className="grid grid-cols-1 gap-3 mb-3">
                 <input
                   type="text"
-                  placeholder="Kód (nepovinné)"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-green-500 text-gray-900"
+                  placeholder="Kód zakázky (povinné)"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-green-500"
                   value={editingOrder ? editingOrder.code : newOrder.code}
                   onChange={e => editingOrder ? setEditingOrder({...editingOrder, code: e.target.value}) : setNewOrder({...newOrder, code: e.target.value})}
+                  required
                 />
                 <input
                   type="text"
                   placeholder="Název zakázky"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-green-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-green-500"
                   value={editingOrder ? editingOrder.name : newOrder.name}
                   onChange={e => editingOrder ? setEditingOrder({...editingOrder, name: e.target.value}) : setNewOrder({...newOrder, name: e.target.value})}
                   required
@@ -156,7 +154,10 @@ export const ResourceManager: React.FC<ResourceManagerProps> = ({
                 <div className="flex items-center gap-1">
                   {activeTab === 'active' && (
                     <button 
-                      onClick={() => setEditingOrder(order)}
+                      onClick={() => {
+                        Haptics.light();
+                        setEditingOrder(order);
+                      }}
                       className="text-gray-400 hover:text-blue-600 p-2 rounded-full hover:bg-blue-50 transition-colors"
                       title="Upravit"
                     >
@@ -164,7 +165,9 @@ export const ResourceManager: React.FC<ResourceManagerProps> = ({
                     </button>
                   )}
                   <button 
-                    onClick={() => onToggleOrderArchive(order.id)}
+                    onClick={() => {
+                      onToggleOrderArchive(order.id);
+                    }}
                     className={`p-2 rounded-full transition-colors ${activeTab === 'active' ? 'text-gray-400 hover:text-amber-600 hover:bg-amber-50' : 'text-green-500 hover:text-green-700 hover:bg-green-50'}`}
                     title={activeTab === 'active' ? 'Archivovat' : 'Obnovit'}
                   >
@@ -177,7 +180,6 @@ export const ResourceManager: React.FC<ResourceManagerProps> = ({
           </div>
         </div>
 
-        {/* Vehicles Section */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col h-full">
           <div className="flex items-center gap-2 mb-6">
             <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
@@ -193,7 +195,7 @@ export const ResourceManager: React.FC<ResourceManagerProps> = ({
                 <input
                   type="text"
                   placeholder="Název (např. Škoda)"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500"
                   value={editingVehicle ? editingVehicle.name : newVehicle.name}
                   onChange={e => editingVehicle ? setEditingVehicle({...editingVehicle, name: e.target.value}) : setNewVehicle({...newVehicle, name: e.target.value})}
                   required
@@ -201,7 +203,7 @@ export const ResourceManager: React.FC<ResourceManagerProps> = ({
                 <input
                   type="text"
                   placeholder="SPZ"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500"
                   value={editingVehicle ? editingVehicle.licensePlate : newVehicle.licensePlate}
                   onChange={e => editingVehicle ? setEditingVehicle({...editingVehicle, licensePlate: e.target.value}) : setNewVehicle({...newVehicle, licensePlate: e.target.value})}
                   required
@@ -230,7 +232,10 @@ export const ResourceManager: React.FC<ResourceManagerProps> = ({
                  <div className="flex items-center gap-1">
                   {activeTab === 'active' && (
                     <button 
-                      onClick={() => setEditingVehicle(vehicle)}
+                      onClick={() => {
+                        Haptics.light();
+                        setEditingVehicle(vehicle);
+                      }}
                       className="text-gray-400 hover:text-blue-600 p-2 rounded-full hover:bg-blue-50 transition-colors"
                       title="Upravit"
                     >
@@ -238,7 +243,9 @@ export const ResourceManager: React.FC<ResourceManagerProps> = ({
                     </button>
                   )}
                   <button 
-                    onClick={() => onToggleVehicleArchive(vehicle.id)}
+                    onClick={() => {
+                      onToggleVehicleArchive(vehicle.id);
+                    }}
                     className={`p-2 rounded-full transition-colors ${activeTab === 'active' ? 'text-gray-400 hover:text-amber-600 hover:bg-amber-50' : 'text-green-500 hover:text-green-700 hover:bg-green-50'}`}
                     title={activeTab === 'active' ? 'Archivovat' : 'Obnovit'}
                   >
@@ -251,7 +258,6 @@ export const ResourceManager: React.FC<ResourceManagerProps> = ({
           </div>
         </div>
 
-        {/* Drivers Section */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col h-full">
           <div className="flex items-center gap-2 mb-6">
             <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
@@ -267,7 +273,7 @@ export const ResourceManager: React.FC<ResourceManagerProps> = ({
                 <input
                   type="text"
                   placeholder="Jméno a příjmení"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-purple-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-purple-500"
                   value={editingDriver ? editingDriver.name : newDriver.name}
                   onChange={e => editingDriver ? setEditingDriver({...editingDriver, name: e.target.value}) : setNewDriver({...newDriver, name: e.target.value})}
                   required
@@ -296,7 +302,10 @@ export const ResourceManager: React.FC<ResourceManagerProps> = ({
                  <div className="flex items-center gap-1">
                   {activeTab === 'active' && (
                     <button 
-                      onClick={() => setEditingDriver(driver)}
+                      onClick={() => {
+                        Haptics.light();
+                        setEditingDriver(driver);
+                      }}
                       className="text-gray-400 hover:text-blue-600 p-2 rounded-full hover:bg-blue-50 transition-colors"
                       title="Upravit"
                     >
@@ -304,7 +313,9 @@ export const ResourceManager: React.FC<ResourceManagerProps> = ({
                     </button>
                   )}
                   <button 
-                    onClick={() => onToggleDriverArchive(driver.id)}
+                    onClick={() => {
+                      onToggleDriverArchive(driver.id);
+                    }}
                     className={`p-2 rounded-full transition-colors ${activeTab === 'active' ? 'text-gray-400 hover:text-amber-600 hover:bg-amber-50' : 'text-green-500 hover:text-green-700 hover:bg-green-50'}`}
                     title={activeTab === 'active' ? 'Archivovat' : 'Obnovit'}
                   >
