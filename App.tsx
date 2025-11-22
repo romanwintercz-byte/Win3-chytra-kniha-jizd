@@ -12,7 +12,8 @@ import {
   Filter,
   User,
   Lightbulb,
-  Briefcase
+  Briefcase,
+  HelpCircle
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Trip, TripType, Vehicle, Driver, Order, INITIAL_TRIPS, INITIAL_VEHICLES, INITIAL_DRIVERS, INITIAL_ORDERS, AppDataExport, TripTemplate } from './types';
@@ -205,6 +206,19 @@ const App: React.FC = () => {
             <h1 className="text-xl font-black text-gray-900 tracking-tight">Kniha<span className="text-gray-400">Jízd</span></h1>
           </div>
           <div className="flex items-center gap-2">
+             {/* Help Button */}
+             <button
+               onClick={() => {
+                  Haptics.light();
+                  setCurrentView('help');
+                  window.scrollTo(0,0);
+               }}
+               className={`p-2 rounded-full transition-colors relative group ${currentView === 'help' ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'}`}
+               title="Nápověda"
+             >
+               <HelpCircle size={24} className={currentView === 'help' ? "fill-blue-200" : ""} />
+             </button>
+
              {/* Smart Guide Button */}
              <button 
                onClick={() => {
@@ -234,7 +248,7 @@ const App: React.FC = () => {
                 </button>
                 <button 
                   onClick={() => setCurrentView('settings')}
-                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${currentView === 'settings' || currentView === 'help' ? 'bg-gray-100 text-black' : 'text-gray-500 hover:text-black'}`}
+                  className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${currentView === 'settings' ? 'bg-gray-100 text-black' : 'text-gray-500 hover:text-black'}`}
                 >
                   Nastavení
                 </button>
@@ -417,9 +431,9 @@ const App: React.FC = () => {
           </button>
           <button 
             onClick={() => { setCurrentView('settings'); Haptics.light(); }}
-            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${currentView === 'settings' || currentView === 'help' ? 'text-black' : 'text-gray-400'}`}
+            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${currentView === 'settings' ? 'text-black' : 'text-gray-400'}`}
           >
-            <SettingsIcon size={24} strokeWidth={currentView === 'settings' || currentView === 'help' ? 2.5 : 2} />
+            <SettingsIcon size={24} strokeWidth={currentView === 'settings' ? 2.5 : 2} />
             <span className="text-[10px] font-medium">Nastavení</span>
           </button>
         </div>
