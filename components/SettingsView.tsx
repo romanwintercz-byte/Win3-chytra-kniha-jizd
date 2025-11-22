@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Database, Calendar, Lock } from 'lucide-react';
+import { Settings, Database, Calendar, Lock, HelpCircle, ChevronRight } from 'lucide-react';
 import { ResourceManager } from './ResourceManager';
 import { DataManagement } from './DataManagement';
 import { Vehicle, Driver, Order, Trip, AppDataExport } from '../types';
@@ -25,6 +25,7 @@ interface SettingsViewProps {
 
   onImportData: (data: AppDataExport) => void;
   onOpenAbout: () => void;
+  onOpenHelp: () => void;
 
   closureDate?: string;
   onSetClosureDate?: (date: string) => void;
@@ -124,7 +125,26 @@ export const SettingsView: React.FC<SettingsViewProps> = (props) => {
         </div>
       )}
 
-      <div className="mt-12 pt-8 border-t border-gray-200">
+      <div className="mt-12 pt-8 border-t border-gray-200 space-y-4">
+        <button 
+          onClick={() => {
+            Haptics.light();
+            props.onOpenHelp();
+          }}
+          className="w-full bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between group hover:bg-gray-50 transition-colors"
+        >
+           <div className="flex items-center gap-3">
+             <div className="p-2 bg-gray-100 text-gray-600 rounded-lg group-hover:bg-white transition-colors">
+               <HelpCircle size={20} />
+             </div>
+             <div className="text-left">
+               <h4 className="font-bold text-gray-900">Nápověda k aplikaci</h4>
+               <p className="text-xs text-gray-500">Návody, tipy a triky</p>
+             </div>
+           </div>
+           <ChevronRight size={20} className="text-gray-400" />
+        </button>
+
         <button 
           onClick={props.onOpenAbout}
           className="w-full flex flex-col items-center justify-center text-center opacity-60 hover:opacity-100 transition-opacity group"
@@ -134,7 +154,7 @@ export const SettingsView: React.FC<SettingsViewProps> = (props) => {
            </div>
            <h4 className="font-bold text-gray-900">Chytrá Kniha Jízd</h4>
            <p className="text-xs text-gray-500 mt-1">Vyrobeno studiem Win3</p>
-           <p className="text-[10px] text-gray-400 mt-2 font-mono">v2.2.0 Mobile</p>
+           <p className="text-[10px] text-gray-400 mt-2 font-mono">v2.3.0 Mobile</p>
         </button>
       </div>
     </div>
